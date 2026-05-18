@@ -45,17 +45,17 @@ body::before{
   content:"";
   position:fixed;inset:0;z-index:-2;
   background:url('abraxas-bg.png') center center / cover no-repeat;
-  filter:saturate(.25) hue-rotate(110deg) brightness(.6) blur(1.5px);
-  opacity:.22;
+  filter:saturate(.35) hue-rotate(100deg) brightness(.75);
+  opacity:.55;
   pointer-events:none;
 }
-/* dark horror tint — near-pure black overlay */
+/* dark horror tint — lets the image breathe */
 body::after{
   content:"";
   position:fixed;inset:0;z-index:-1;
   background:
-    radial-gradient(1200px 600px at 70% 0%, rgba(180,20,20,.05), transparent 55%),
-    linear-gradient(180deg, rgba(2,5,2,.72) 0%, rgba(2,5,2,.88) 50%, rgba(2,5,2,.95) 100%);
+    radial-gradient(1200px 600px at 70% 0%, rgba(180,20,20,.06), transparent 55%),
+    linear-gradient(180deg, rgba(2,5,2,.45) 0%, rgba(2,5,2,.62) 50%, rgba(2,5,2,.78) 100%);
   pointer-events:none;
 }
 
