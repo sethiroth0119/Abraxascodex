@@ -10,9 +10,9 @@ app.use(express.json({ limit: '10mb' }));
 const PROJECT = path.join(__dirname, 'project');
 app.use(express.static(PROJECT));
 
-// Root → main HTML file
+// Root → landing page
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(PROJECT, 'Mythic Spellbook Studio.html'));
+  res.sendFile(path.join(PROJECT, 'index.html'));
 });
 
 // Claude API proxy — used by Athena and other AI helpers throughout the studio

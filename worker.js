@@ -6,7 +6,7 @@ export default {
     if (url.pathname === '/api/sprite' && request.method === 'POST') return handleSprite(request, env);
 
     if (url.pathname === '/' || url.pathname === '') {
-      return Response.redirect(new URL('/login.html', url.origin).href, 302);
+      return env.ASSETS.fetch(new Request(new URL('/index.html', url.origin), request));
     }
 
     return env.ASSETS.fetch(request);
