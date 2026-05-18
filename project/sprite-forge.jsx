@@ -23,14 +23,16 @@ const SIZES = [16, 32, 64];
 
 const SpriteForge = () => {
   const heroes = ((window.STATE && window.STATE.heroes) || window.HEROES || []);
-  const [heroId,    setHeroId]    = React.useState('');
+  const cards  = ((window.STATE && window.STATE.cards)  || window.CARDS  || []);
+  const [sourceType, setSourceType] = React.useState('hero'); // 'hero' | 'unit'
+  const [sourceId,  setSourceId]  = React.useState('');
   const [desc,      setDesc]      = React.useState('');
   const [style,     setStyle]     = React.useState('pixel_art');
   const [size,      setSize]      = React.useState(32);
   const [anims,     setAnims]     = React.useState(['idle', 'walk']);
   const [phase,     setPhase]     = React.useState('idle'); // idle | generating | done | error
   const [statusMsg, setStatusMsg] = React.useState('');
-  const [result,    setResult]    = React.useState(null);  // { charId, sheets:[{anim, url}] }
+  const [result,    setResult]    = React.useState(null);
   const [gallery,   setGallery]   = React.useState(() => {
     try { return JSON.parse(localStorage.getItem('mss:sprite-gallery') || '[]'); } catch { return []; }
   });
@@ -60,18 +62,31 @@ const SpriteForge = () => {
     setAnims(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
 
   const buildWithAthena = async () => {
-    const hero = heroes.find(h => h.id === heroId);
-    const base = hero
-      ? `Character: ${hero.name} (${hero.kind}, ${hero.element} element, ${hero.faction} faction). Bio: ${hero.bio || '—'}. Personality: ${(hero.personality || []).join(', ')}.`
-      : desc;
+    let base = '';
+    if (sourceType === 'hero') {
+      const hero = heroes.find(h => h.id === sourceId);
+      base = hero
+        ? `Hero character: ${hero.name} (${hero.kind}, ${hero.element} element, ${hero.faction} faction). Bio: ${hero.bio || '—'}. Personality: ${(hero.personality || []).join(', ')}.`
+        : desc;
+    } else {
+      const card = cards.find(c => c.id === sourceId);
+      if (card) {
+        const elNames = (card.elements || [card.element]).filter(Boolean).join('/');
+        const facNames = (card.factions || [card.faction]).filter(Boolean).join('/');
+        base = `Game unit card: "${card.name}" (type: ${card.type}, elements: ${elNames}, factions: ${facNames}, rarity: ${card.rarity}, cost: ${card.cost}). Abilities: ${(card.text || '').replace(/<[^>]+>/g, '') || '—'}.`;
+      } else {
+        base = desc;
+      }
+    }
     if (!base.trim()) return;
 
     setAthBusy(true);
     try {
+      const isUnit = sourceType === 'unit';
       const reply = await window.claude.complete({
         messages: [{
           role: 'user',
-          content: `Write a concise sprite description for a game character in 2 sentences. Focus ONLY on visuals: body shape, outfit, colors, weapon or staff if any, distinctive markings. Style: ${style}. Character context:\n${base}\nOutput the description only, no labels.`,
+          content: `Write a concise sprite description for a game ${isUnit ? 'unit/creature' : 'character'} in 2 sentences. Focus ONLY on visuals: body shape, ${isUnit ? 'creature features, size, silhouette,' : 'outfit, colors,'} weapon or abilities visible on body, distinctive markings. Art style: ${style}. Context:\n${base}\nOutput the visual description only, no labels or intro.`,
         }],
       });
       setDesc(reply.trim());
@@ -155,7 +170,10 @@ const SpriteForge = () => {
 
       if (sheets.length === 0) throw new Error('No spritesheets were generated — check your AutoSprite credits.');
 
-      const entry = { id: charId, desc, style, size, anims, sheets, created: Date.now() };
+      const sourceName = sourceType === 'hero'
+        ? (heroes.find(h => h.id === sourceId)?.name || '')
+        : (cards.find(c => c.id === sourceId)?.name || '');
+      const entry = { id: charId, desc, style, size, anims, sheets, sourceType, sourceName, created: Date.now() };
       setResult(entry);
       const next = [entry, ...gallery.slice(0, 19)];
       setGallery(next);
@@ -175,7 +193,7 @@ const SpriteForge = () => {
         <div>
           <h1 className="page-title"><span className="ornament">⚡</span>Sprite Forge</h1>
           <div className="page-sub">
-            AI sprite sheet generation for Abraxas characters
+            AI sprite sheets for heroes, NPCs &amp; card units
             {credits !== null && <span style={{marginLeft:16,color:'var(--gold)',fontFamily:'var(--mono)',fontSize:11}}>◈ {credits} credits</span>}
           </div>
         </div>
@@ -193,31 +211,68 @@ const SpriteForge = () => {
           {/* ── LEFT: Setup panel ─────────────────────────── */}
           <div style={{display:'grid', gap:16}}>
 
-            {/* Hero picker */}
+            {/* Source picker */}
             <div className="panel">
-              <div className="panel-head"><div className="panel-title">Character</div></div>
+              <div className="panel-head"><div className="panel-title">Source</div></div>
               <div className="panel-body" style={{display:'grid', gap:12}}>
-                <div>
-                  <label className="field-label">Pick from studio (optional)</label>
-                  <select className="field-select" value={heroId} onChange={e => {
-                    setHeroId(e.target.value);
-                    const h = heroes.find(x => x.id === e.target.value);
-                    if (h) setDesc(`${h.name} — ${h.kind}, ${h.element} element, ${h.faction} faction. ${h.bio || ''}`);
-                  }}>
-                    <option value="">— custom description —</option>
-                    {heroes.map(h => <option key={h.id} value={h.id}>{h.name} ({h.kind})</option>)}
-                  </select>
+
+                {/* Toggle: Hero / Unit */}
+                <div style={{display:'flex', gap:6}}>
+                  {[['hero','☥ Hero / NPC'],['unit','⚔ Unit / Card']].map(([k,l]) => (
+                    <button key={k} className={`btn ${sourceType===k?'btn-primary':''}`}
+                      style={{flex:1, fontSize:12}}
+                      onClick={() => { setSourceType(k); setSourceId(''); setDesc(''); }}>
+                      {l}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Hero picker */}
+                {sourceType === 'hero' && (
+                  <div>
+                    <label className="field-label">Pick a hero (optional)</label>
+                    <select className="field-select" value={sourceId} onChange={e => {
+                      setSourceId(e.target.value);
+                      const h = heroes.find(x => x.id === e.target.value);
+                      if (h) setDesc(`${h.name} — ${h.kind}, ${h.element} element, ${h.faction} faction. ${h.bio || ''}`);
+                      else setDesc('');
+                    }}>
+                      <option value="">— custom description —</option>
+                      {heroes.map(h => <option key={h.id} value={h.id}>{h.name} ({h.kind})</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {/* Unit / Card picker */}
+                {sourceType === 'unit' && (
+                  <div>
+                    <label className="field-label">Pick a card / unit (optional)</label>
+                    <select className="field-select" value={sourceId} onChange={e => {
+                      setSourceId(e.target.value);
+                      const c = cards.find(x => x.id === e.target.value);
+                      if (c) {
+                        const elNames = (c.elements || [c.element]).filter(Boolean).join('/');
+                        const facNames = (c.factions || [c.faction]).filter(Boolean).join('/');
+                        setDesc(`${c.name} — ${c.type}, ${elNames} element, ${facNames}. ${(c.text||'').replace(/<[^>]+>/g,'')}`);
+                      } else setDesc('');
+                    }}>
+                      <option value="">— custom description —</option>
+                      {cards.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="field-label">Visual description</label>
                   <textarea className="field-area" rows={5} value={desc} onChange={e => setDesc(e.target.value)}
-                    placeholder="Describe the character's appearance — body type, outfit, colors, weapon, distinctive markings…"/>
+                    placeholder={sourceType === 'unit'
+                      ? 'Describe the unit\'s appearance — creature type, size, colors, attack style, distinctive features…'
+                      : 'Describe the character\'s appearance — body type, outfit, colors, weapon, distinctive markings…'}/>
                 </div>
 
-                <button className="btn" onClick={buildWithAthena} disabled={athBusy || (!heroId && !desc.trim())}
+                <button className="btn" onClick={buildWithAthena} disabled={athBusy || (!sourceId && !desc.trim())}
                   style={{display:'flex', alignItems:'center', gap:8}}>
-                  {athBusy ? '🦉 Thinking…' : <><span>🦉</span> Build prompt from lore</>}
+                  {athBusy ? '🦉 Thinking…' : <><span>🦉</span> Build prompt from {sourceType === 'unit' ? 'card data' : 'lore'}</>}
                 </button>
               </div>
             </div>
@@ -302,7 +357,7 @@ const SpriteForge = () => {
                   Sprite Forge
                 </div>
                 <div style={{fontFamily:'var(--serif)', fontStyle:'italic', color:'var(--ink-faint)', fontSize:14, lineHeight:1.7, maxWidth:340, margin:'0 auto'}}>
-                  Describe your character, pick a style and animations, then hit Generate. Athena can auto-write the prompt from any hero's lore.
+                  Pick a hero or card unit, choose a style and animations, then hit Generate. Athena reads the lore or card data to build the visual prompt.
                 </div>
               </div>
             )}
@@ -467,7 +522,7 @@ const GalleryTab = ({ gallery, setGallery }) => {
             </div>
             <div style={{padding:'8px 10px'}}>
               <div style={{fontFamily:'var(--mono)', fontSize:10, color:'var(--gold-bright)', marginBottom:2}}>
-                {g.style} {g.style==='pixel_art' ? `· ${g.size}px` : ''}
+                {g.sourceName ? `${g.sourceName} · ` : ''}{g.style}{g.style==='pixel_art' ? ` · ${g.size}px` : ''}
               </div>
               <div style={{fontFamily:'var(--serif)', fontSize:12, color:'var(--ink-dim)', lineHeight:1.3,
                            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{g.desc}</div>
