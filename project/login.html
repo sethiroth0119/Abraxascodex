@@ -220,6 +220,19 @@
 <body>
   <div class="grain-overlay"></div>
   <div class="page">
+    <a href="/" style="
+      position:fixed; top:20px; left:24px;
+      display:inline-flex; align-items:center; gap:7px;
+      font-family:var(--display); font-size:12px; letter-spacing:.14em;
+      color:var(--ink-faint); text-decoration:none;
+      padding:7px 14px; border:1px solid var(--rule); border-radius:6px;
+      background:rgba(20,17,11,.6); backdrop-filter:blur(8px);
+      transition:color .15s, border-color .15s;
+    " onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(201,161,74,.35)'"
+       onmouseout="this.style.color='var(--ink-faint)';this.style.borderColor='var(--rule)'">
+      ← Back
+    </a>
+
     <div class="brand">
       <div class="brand-mark">📖</div>
       <div class="brand-name">Abraxas Codex</div>
