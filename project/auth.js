@@ -16,7 +16,7 @@ const ALL_PAGES = [
   'heroes','lineage',
   'threads','tasks','ideas','concepts','dialogue','bugs',
   'campaigns','worldEvents','resources','economy','relics',
-  'playtest','activity','settings','users',
+  'playtest','activity','settings','users','sprites',
 ];
 
 async function requireAuth() {

@@ -80,6 +80,7 @@ const App = () => {
       case 'ideas':     return <IdeasPage/>;
       case 'resources': return <ResourcesPage/>;
       case 'worldEvents': return <WorldEventsPage/>;
+      case 'sprites':   return <SpriteForge/>;
       case 'users':     return <UsersAdminPage/>;
       case 'profile':   return null; // handled as overlay
       default: return <Dashboard setRoute={setRoute}/>;;

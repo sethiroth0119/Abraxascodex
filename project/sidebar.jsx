@@ -37,8 +37,9 @@ const NAV = [
     { id:'activity',   label:'Activity',        icon:'feed',    badge:null },
     { id:'settings',   label:'Studio Settings', icon:'sliders', badge:null },
   ]},
-  { section: 'Admin', items: [
-    { id:'users', label:'Users & Roles', icon:'sliders', badge:null },
+  { section: 'Studio', items: [
+    { id:'sprites', label:'Sprite Forge', icon:'flask', badge:'AI' },
+    { id:'users',   label:'Users & Roles', icon:'sliders', badge:null },
   ]},
 ];
 
