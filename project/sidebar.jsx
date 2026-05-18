@@ -90,7 +90,7 @@ const Sidebar = ({ route, setRoute }) => {
         })}
       </nav>
 
-      <div className="sidebar-foot" style={{cursor:'pointer'}} onClick={()=>setRoute('settings')} title="Studio settings">
+      <div className="sidebar-foot" style={{cursor:'pointer'}} onClick={()=>setRoute('profile')} title="Your profile">
         <div className="avatar" style={{
           background: myRole ? `linear-gradient(135deg,${ROLE_COLOR[myRole]}44,${ROLE_COLOR[myRole]}22)` : undefined,
           border: myRole ? `1px solid ${ROLE_COLOR[myRole]}66` : undefined,

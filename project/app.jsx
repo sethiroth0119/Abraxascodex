@@ -17,6 +17,7 @@ const ACCENTS = [
 
 const App = () => {
   const [route, setRoute] = React.useState('dashboard');
+  const [showProfile, setShowProfile] = React.useState(false);
   const [t, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
   const [settings] = window.useEntities ? window.useEntities('settings') : [(window.SETTINGS||{})];
   const [savedFlash, setSavedFlash] = React.useState(false);
@@ -44,6 +45,11 @@ const App = () => {
     document.documentElement.style.setProperty('--gold-bright', lighten(t.accent, 15));
     document.documentElement.style.setProperty('--gold-deep',   darken(t.accent, 25));
   }, [t.theme, t.density, t.sidebar, t.accent, t.frame]);
+
+  // Open profile overlay when sidebar footer is clicked
+  React.useEffect(() => {
+    if (route === 'profile') { setShowProfile(true); setRoute('dashboard'); }
+  }, [route]);
 
   const page = (() => {
     switch(route){
@@ -75,6 +81,7 @@ const App = () => {
       case 'resources': return <ResourcesPage/>;
       case 'worldEvents': return <WorldEventsPage/>;
       case 'users':     return <UsersAdminPage/>;
+      case 'profile':   return null; // handled as overlay
       default: return <Dashboard setRoute={setRoute}/>;;
     }
   })();
@@ -116,9 +123,9 @@ const App = () => {
             <span className="save-dot"/> {savedFlash ? 'Saving…' : 'Saved'}
           </div>
           <button className="btn" title="Comments"><Icon name="comment" size={14}/></button>
-          <div className="avatar" title={(window.CURRENT_USER && window.CURRENT_USER.email) || 'Signed in'}
-               style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#5a4a2a,#2a1f0a)'}}>
-            {((window.CURRENT_USER && (window.CURRENT_USER.user_metadata?.full_name || window.CURRENT_USER.email)) || 'U')[0].toUpperCase()}
+          <div className="avatar" title="Your profile" onClick={() => setShowProfile(true)}
+               style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#5a4a2a,#2a1f0a)',cursor:'pointer'}}>
+            {((window.CURRENT_PROFILE?.full_name || window.CURRENT_USER?.email) || 'U')[0].toUpperCase()}
           </div>
           <button className="btn btn-ghost" title="Sign out" onClick={() => window.signOut && window.signOut()}
                   style={{fontSize:12,letterSpacing:'.08em',opacity:.7}}>
@@ -130,6 +137,8 @@ const App = () => {
         </div>
         <div className="content grain">{page}</div>
       </div>
+
+      {showProfile && <ProfilePage onClose={() => setShowProfile(false)}/>}
 
       <Athena/>
 
