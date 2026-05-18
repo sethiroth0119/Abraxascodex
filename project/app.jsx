@@ -141,6 +141,8 @@ const App = () => {
 
       {showProfile && <ProfilePage onClose={() => setShowProfile(false)}/>}
 
+      <InviteModal/>
+
       <Athena/>
 
       <window.TweaksPanel title="Tweaks">

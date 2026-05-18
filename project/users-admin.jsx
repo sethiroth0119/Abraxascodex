@@ -26,10 +26,20 @@ const PAGE_LABELS = {
   users:'Users & Roles',
 };
 
+const INVITE_ROLES = ['moderator','staff','user'];
+
+const genCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = 'ABX-';
+  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  return c;
+};
+
 const UsersAdminPage = () => {
   const [tab, setTab]         = React.useState('users');
   const [users, setUsers]     = React.useState([]);
   const [perms, setPerms]     = React.useState([]);
+  const [invites, setInvites] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving]   = React.useState(false);
   const [toast, setToast]     = React.useState(null);
@@ -49,12 +59,15 @@ const UsersAdminPage = () => {
 
       const { data: p } = await sb.from('role_permissions').select('*');
       if (p) {
-        // Ensure all four roles are represented
         const map = Object.fromEntries(p.map(r => [r.role, r.allowed_pages || []]));
         setPerms(ROLES.map(r => ({ role: r, allowed_pages: map[r] || [] })));
       } else {
         setPerms(ROLES.map(r => ({ role: r, allowed_pages: (window.ALL_ROLE_PERMISSIONS.find(x=>x.role===r)||{}).allowed_pages||[] })));
       }
+
+      const { data: inv } = await sb.from('invite_codes').select('*').order('created_at', { ascending: false });
+      if (inv) setInvites(inv);
+
       setLoading(false);
     })();
   }, []);
@@ -133,7 +146,7 @@ const UsersAdminPage = () => {
 
       {/* Tabs */}
       <div style={{display:'flex',gap:0,borderBottom:'1px solid var(--rule)',marginBottom:24}}>
-        {[['users','👥 Members'],['perms','🔒 Permissions']].map(([id,label]) => (
+        {[['users','👥 Members'],['invites','🔗 Invite Links'],['perms','🔒 Permissions']].map(([id,label]) => (
           <button key={id} onClick={()=>setTab(id)}
             style={{padding:'10px 20px',background:'none',border:'none',cursor:'pointer',
               fontFamily:'var(--display)',fontSize:13,letterSpacing:'.1em',
@@ -208,6 +221,14 @@ const UsersAdminPage = () => {
             );
           })}
         </div>
+      )}
+
+      {/* ── INVITES TAB ── */}
+      {tab === 'invites' && (
+        <InvitesTab
+          invites={invites} setInvites={setInvites}
+          meId={me?.id} showToast={showToast}
+        />
       )}
 
       {/* ── PERMISSIONS TAB ── */}
@@ -318,6 +339,184 @@ const UsersAdminPage = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const InvitesTab = ({ invites, setInvites, meId, showToast }) => {
+  const [newRole,    setNewRole]    = React.useState('staff');
+  const [newLabel,   setNewLabel]   = React.useState('');
+  const [newMaxUses, setNewMaxUses] = React.useState(1);
+  const [newExpiry,  setNewExpiry]  = React.useState('');
+  const [creating,   setCreating]   = React.useState(false);
+  const [copied,     setCopied]     = React.useState(null);
+
+  const origin = window.location.origin;
+
+  const createInvite = async () => {
+    setCreating(true);
+    const code = genCode();
+    const sb = window.supabaseClient;
+    const row = {
+      code,
+      role: newRole,
+      label: newLabel.trim() || null,
+      created_by: meId,
+      max_uses: newMaxUses,
+      expires_at: newExpiry ? new Date(newExpiry).toISOString() : null,
+    };
+    const { data, error } = await sb.from('invite_codes').insert(row).select().single();
+    if (error) { showToast('Error: ' + error.message, 'err'); }
+    else { setInvites([data, ...invites]); setNewLabel(''); showToast('Invite created'); }
+    setCreating(false);
+  };
+
+  const revokeInvite = async (id) => {
+    if (!confirm('Revoke this invite? Anyone with the link will no longer be able to use it.')) return;
+    const { error } = await window.supabaseClient.from('invite_codes').delete().eq('id', id);
+    if (error) return showToast('Error: ' + error.message, 'err');
+    setInvites(invites.filter(i => i.id !== id));
+    showToast('Invite revoked');
+  };
+
+  const copyLink = (code) => {
+    const link = `${origin}/login.html?invite=${code}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(code);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  const isExpired = (inv) => inv.expires_at && new Date(inv.expires_at) < new Date();
+  const isUsedUp  = (inv) => inv.use_count >= inv.max_uses;
+
+  return (
+    <div style={{display:'grid', gap:24}}>
+
+      {/* Create new invite */}
+      <div className="panel">
+        <div className="panel-head"><div className="panel-title">Generate Invite Link</div></div>
+        <div className="panel-body" style={{display:'grid', gap:14}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+            <div>
+              <label className="field-label">Role to grant</label>
+              <select className="field-select" value={newRole} onChange={e => setNewRole(e.target.value)}>
+                {INVITE_ROLES.map(r => (
+                  <option key={r} value={r}>{ROLE_ICON[r]} {r}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="field-label">Max uses</label>
+              <input className="field-input" type="number" min={1} max={100}
+                value={newMaxUses} onChange={e => setNewMaxUses(Math.max(1, +e.target.value))}/>
+            </div>
+          </div>
+
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+            <div>
+              <label className="field-label">Label (optional)</label>
+              <input className="field-input" value={newLabel} onChange={e => setNewLabel(e.target.value)}
+                placeholder="e.g. For the art team"/>
+            </div>
+            <div>
+              <label className="field-label">Expires (optional)</label>
+              <input className="field-input" type="date" value={newExpiry}
+                onChange={e => setNewExpiry(e.target.value)}/>
+            </div>
+          </div>
+
+          <button className="btn btn-primary" onClick={createInvite} disabled={creating}
+            style={{justifySelf:'start', paddingLeft:20, paddingRight:20}}>
+            {creating ? 'Creating…' : '🔗 Generate Invite Link'}
+          </button>
+        </div>
+      </div>
+
+      {/* Invite list */}
+      <div>
+        <div style={{fontFamily:'var(--mono)', fontSize:10, letterSpacing:'.2em', textTransform:'uppercase',
+                     color:'var(--ink-faint)', marginBottom:12}}>
+          Active invites ({invites.length})
+        </div>
+
+        {invites.length === 0 && (
+          <div className="panel" style={{padding:32, textAlign:'center'}}>
+            <div style={{color:'var(--ink-faint)', fontFamily:'var(--serif)', fontStyle:'italic'}}>
+              No invites yet. Generate one above and send the link.
+            </div>
+          </div>
+        )}
+
+        {invites.map(inv => {
+          const expired = isExpired(inv);
+          const usedUp  = isUsedUp(inv);
+          const inactive = expired || usedUp;
+          const color = ROLE_COLOR[inv.role] || '#888';
+
+          return (
+            <div key={inv.id} className="panel" style={{marginBottom:10, opacity: inactive ? .55 : 1}}>
+              <div style={{display:'flex', alignItems:'center', gap:12, padding:'12px 16px', flexWrap:'wrap'}}>
+
+                {/* Role badge */}
+                <div style={{
+                  display:'inline-flex', alignItems:'center', gap:5,
+                  padding:'4px 12px', borderRadius:20, flexShrink:0,
+                  background:`${color}22`, border:`1px solid ${color}44`,
+                  color, fontFamily:'var(--mono)', fontSize:11, letterSpacing:'.1em',
+                }}>
+                  {ROLE_ICON[inv.role]} {inv.role}
+                </div>
+
+                {/* Code */}
+                <span style={{fontFamily:'var(--mono)', fontSize:13, color:'var(--gold-bright)',
+                              letterSpacing:'.14em', flexShrink:0}}>
+                  {inv.code}
+                </span>
+
+                {/* Label */}
+                {inv.label && (
+                  <span style={{fontFamily:'var(--serif)', fontStyle:'italic', color:'var(--ink-dim)', fontSize:13}}>
+                    {inv.label}
+                  </span>
+                )}
+
+                {/* Uses */}
+                <span style={{fontFamily:'var(--mono)', fontSize:11, color: usedUp ? 'var(--ember)' : 'var(--ink-faint)'}}>
+                  {inv.use_count}/{inv.max_uses} used
+                </span>
+
+                {/* Expiry */}
+                {inv.expires_at && (
+                  <span style={{fontFamily:'var(--mono)', fontSize:11, color: expired ? 'var(--ember)' : 'var(--ink-faint)'}}>
+                    {expired ? 'expired' : 'expires'} {new Date(inv.expires_at).toLocaleDateString()}
+                  </span>
+                )}
+
+                {inactive && (
+                  <span className="pill" style={{borderColor:'var(--ember)', color:'var(--ember)', fontSize:10}}>
+                    {expired ? 'expired' : 'used up'}
+                  </span>
+                )}
+
+                {/* Actions */}
+                <div style={{marginLeft:'auto', display:'flex', gap:6}}>
+                  {!inactive && (
+                    <button className="btn" onClick={() => copyLink(inv.code)}
+                      style={{fontSize:11, color: copied===inv.code ? 'var(--verdant)' : undefined}}>
+                      {copied === inv.code ? '✓ Copied' : '🔗 Copy link'}
+                    </button>
+                  )}
+                  <button className="btn" onClick={() => revokeInvite(inv.id)}
+                    style={{fontSize:11, color:'var(--ember)'}}>
+                    ✕ Revoke
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

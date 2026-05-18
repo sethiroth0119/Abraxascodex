@@ -273,7 +273,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="auth.js"></script>
   <script>
-    // Redirect to studio if already signed in
+    // Capture invite code from URL and persist it across the login redirect
+    const _inviteParam = new URLSearchParams(window.location.search).get('invite');
+    if (_inviteParam) sessionStorage.setItem('pendingInvite', _inviteParam);
+
+    // Redirect to studio if already signed in (invite will be picked up there)
     supabaseClient.auth.getSession().then(({ data }) => {
       if (data.session) window.location.href = '/Mythic%20Spellbook%20Studio.html';
     });
