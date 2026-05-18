@@ -57,61 +57,51 @@
   // go still — better to reject than surprise.
   const ACCEPT = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
 
-  // ── Shared sidecar store ────────────────────────────────────────────────
-  // One fetch + immediate write-on-change for every <image-slot> on the
-  // page. Reads via fetch() so viewing works anywhere the HTML and sidecar
-  // are served together; writes go through window.omelette.writeFile, which
-  // the host allowlists to *.state.json basenames only.
+  // ── localStorage-backed store ──────────────────────────────────────────
+  // Replaces the omelette/fetch sidecar from the design-tool prototype with
+  // localStorage so images persist across page reloads without any server
+  // support. Each slot value is {u, s, x, y} (data-URL + pan/zoom state).
+  const LS_KEY = 'mss:image-slots';
   const subs = new Set();
   let slots = {};
-  // ids explicitly cleared before the sidecar fetch resolved — otherwise
-  // the merge below can't tell "never set" from "just deleted" and would
-  // resurrect the sidecar's stale value.
   const tombstones = new Set();
   let loaded = false;
   let loadP = null;
 
   function load() {
     if (loadP) return loadP;
-    loadP = fetch(STATE_FILE)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        // Merge: sidecar loses to any in-memory change that raced ahead of
-        // the fetch (drop or clear) so neither is clobbered by hydration.
-        if (j && typeof j === 'object') {
-          const merged = Object.assign({}, j, slots);
-          // A framing-only write that raced ahead of hydration must not
-          // drop a user image that's only on disk — inherit u from the
-          // sidecar for any in-memory entry that lacks one.
-          for (const k in slots) {
-            if (merged[k] && !merged[k].u && j[k]) {
-              merged[k].u = typeof j[k] === 'string' ? j[k] : j[k].u;
+    loadP = Promise.resolve().then(() => {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+          const j = JSON.parse(raw);
+          if (j && typeof j === 'object') {
+            const merged = Object.assign({}, j, slots);
+            for (const k in slots) {
+              if (merged[k] && !merged[k].u && j[k]) {
+                merged[k].u = typeof j[k] === 'string' ? j[k] : j[k].u;
+              }
             }
+            for (const id of tombstones) delete merged[id];
+            slots = merged;
           }
-          for (const id of tombstones) delete merged[id];
-          slots = merged;
         }
         tombstones.clear();
-      })
-      .catch(() => {})
-      .then(() => { loaded = true; subs.forEach((fn) => fn()); });
+      } catch (e) {}
+      loaded = true;
+      subs.forEach((fn) => fn());
+    });
     return loadP;
   }
 
-  // Serialize writes so two near-simultaneous drops on different slots
-  // can't reorder at the backend and leave the sidecar with only the
-  // first. A save requested mid-flight just marks dirty and re-fires on
-  // completion with the then-current slots.
   let saving = false;
   let saveDirty = false;
   function save() {
     if (saving) { saveDirty = true; return; }
-    const w = window.omelette && window.omelette.writeFile;
-    if (!w) return;
     saving = true;
-    Promise.resolve(w(STATE_FILE, JSON.stringify(slots)))
-      .catch(() => {})
-      .then(() => { saving = false; if (saveDirty) { saveDirty = false; save(); } });
+    try { localStorage.setItem(LS_KEY, JSON.stringify(slots)); } catch (e) {}
+    saving = false;
+    if (saveDirty) { saveDirty = false; save(); }
   }
 
   const S_MAX = 5;
@@ -590,10 +580,9 @@
       this._ring.style.borderRadius = mask ? '' : radius;
       this._ring.style.display = mask ? 'none' : '';
 
-      // Controls and reframe entry gate on this so share links stay read-only.
-      const editable = !!(window.omelette && window.omelette.writeFile);
-      this.toggleAttribute('data-editable', editable);
-      this._sub.style.display = editable ? '' : 'none';
+      // Always editable — localStorage persistence is always available.
+      this.toggleAttribute('data-editable', true);
+      this._sub.style.display = '';
 
       // Content. The sidecar is also writable by the agent's write_file
       // tool, so its value isn't guaranteed canvas-originated — only accept
