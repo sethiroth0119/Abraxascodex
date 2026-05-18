@@ -11,19 +11,19 @@
   <style>
     /* ── Tokens ─────────────────────────────────────── */
     :root {
-      --gold:        #c9a14a;
-      --gold-bright: #e6c068;
-      --gold-deep:   #8a6c2c;
-      --ink:         #ece3cf;
-      --ink-dim:     #b8ad92;
-      --ink-faint:   #7a7058;
-      --parchment:   #0d0a05;
-      --p2:          #14110b;
-      --p3:          #1c1810;
-      --rule:        #3a3120;
-      --ember:       #c45a2f;
-      --verdant:     #7a9a52;
-      --tide:        #4a8aa8;
+      --gold:        #cc2222;
+      --gold-bright: #f03030;
+      --gold-deep:   #881a1a;
+      --ink:         #e8f0e8;
+      --ink-dim:     #9ab89a;
+      --ink-faint:   #4a6050;
+      --parchment:   #050805;
+      --p2:          #090e09;
+      --p3:          #0e150e;
+      --rule:        #1a281a;
+      --ember:       #e06820;
+      --verdant:     #4a9850;
+      --tide:        #38a0a0;
       --aether:      #a48ad2;
       --serif:       "Cormorant Garamond", serif;
       --display:     "Cormorant SC", serif;
@@ -60,9 +60,9 @@
       justify-content: space-between;
       padding: 0 40px;
       height: 64px;
-      background: rgba(13,10,5,.88);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(201,161,74,.12);
+      background: rgba(2,4,2,.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(200,30,30,.18);
     }
     .nav-brand {
       display: flex;
@@ -72,9 +72,9 @@
     .nav-mark {
       width: 36px; height: 36px;
       border-radius: 50%;
-      background: radial-gradient(circle at 40% 35%, #3a2e10, #0d0a05);
+      background: radial-gradient(circle at 40% 35%, #3a1010, #070c07);
       border: 1px solid var(--gold-deep);
-      box-shadow: 0 0 16px rgba(201,161,74,.15);
+      box-shadow: 0 0 16px rgba(184,40,40,.16);
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
     }
@@ -117,7 +117,7 @@
       font-family: var(--display);
       font-size: 12px;
       letter-spacing: .14em;
-      color: #0d0a05;
+      color: #f0e8e0;
       font-weight: 600;
       cursor: pointer;
       transition: opacity .15s, transform .1s;
@@ -140,16 +140,16 @@
       position: absolute;
       inset: 0;
       background: url('abraxas-bg.png') center center / cover no-repeat;
-      filter: saturate(.75) blur(1px);
-      opacity: .4;
+      filter: saturate(.2) hue-rotate(110deg) brightness(.55) blur(2px);
+      opacity: .25;
       z-index: 0;
     }
     .hero-veil {
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,161,74,.06), transparent 70%),
-        linear-gradient(180deg, rgba(13,10,5,.5) 0%, rgba(13,10,5,.82) 70%, rgba(13,10,5,1) 100%);
+        radial-gradient(ellipse 70% 50% at 50% 30%, rgba(180,20,20,.06), transparent 65%),
+        linear-gradient(180deg, rgba(2,4,2,.55) 0%, rgba(2,4,2,.85) 65%, rgba(2,4,2,1) 100%);
       z-index: 1;
     }
     .hero-content {
@@ -167,9 +167,9 @@
       color: var(--gold);
       margin-bottom: 28px;
       padding: 5px 16px;
-      border: 1px solid rgba(201,161,74,.25);
+      border: 1px solid rgba(184,40,40,.28);
       border-radius: 20px;
-      background: rgba(201,161,74,.06);
+      background: rgba(184,40,40,.07);
     }
     .hero-eyebrow::before, .hero-eyebrow::after {
       content: '·';
@@ -180,8 +180,8 @@
       font-size: clamp(42px, 8vw, 88px);
       letter-spacing: .1em;
       line-height: 1.05;
-      color: var(--gold-bright);
-      text-shadow: 0 0 80px rgba(201,161,74,.25), 0 2px 4px rgba(0,0,0,.8);
+      color: #f0f4f0;
+      text-shadow: 0 0 80px rgba(200,30,30,.2), 0 2px 8px rgba(0,0,0,.9);
       margin-bottom: 12px;
     }
     .hero-subtitle {
@@ -214,17 +214,17 @@
       font-family: var(--display);
       font-size: 14px;
       letter-spacing: .2em;
-      color: #0d0a05;
+      color: #f0e8e0;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(201,161,74,.25), 0 8px 24px rgba(0,0,0,.4);
+      box-shadow: 0 0 40px rgba(184,40,40,.28), 0 8px 24px rgba(0,0,0,.4);
       transition: opacity .15s, transform .15s, box-shadow .15s;
     }
-    .btn-hero-primary:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 0 60px rgba(201,161,74,.35),0 12px 32px rgba(0,0,0,.5); }
+    .btn-hero-primary:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 0 60px rgba(184,40,40,.38),0 12px 32px rgba(0,0,0,.5); }
     .btn-hero-ghost {
       padding: 14px 34px;
       background: transparent;
-      border: 1px solid rgba(201,161,74,.35);
+      border: 1px solid rgba(184,40,40,.38);
       border-radius: 7px;
       font-family: var(--display);
       font-size: 14px;
@@ -233,7 +233,7 @@
       cursor: pointer;
       transition: background .15s, border-color .15s, transform .15s;
     }
-    .btn-hero-ghost:hover { background:rgba(201,161,74,.08); border-color:var(--gold); transform:translateY(-2px); }
+    .btn-hero-ghost:hover { background:rgba(184,40,40,.10); border-color:var(--gold); transform:translateY(-2px); }
     .hero-scroll {
       position: absolute;
       bottom: 36px;
@@ -267,7 +267,7 @@
       content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, rgba(201,161,74,.3), transparent);
+      background: linear-gradient(90deg, rgba(184,40,40,.32), transparent);
       max-width: 80px;
     }
     .section-title {
@@ -275,7 +275,7 @@
       font-size: clamp(28px, 4vw, 46px);
       letter-spacing: .08em;
       line-height: 1.15;
-      color: var(--gold-bright);
+      color: #f0f4f0;
       margin-bottom: 16px;
     }
     .section-body {
@@ -308,16 +308,16 @@
       padding: 20px;
       border: 1px solid var(--rule);
       border-radius: 8px;
-      background: rgba(201,161,74,.03);
+      background: rgba(184,40,40,.04);
       transition: border-color .2s, background .2s;
     }
-    .pillar:hover { border-color: rgba(201,161,74,.25); background: rgba(201,161,74,.06); }
+    .pillar:hover { border-color: rgba(184,40,40,.28); background: rgba(184,40,40,.07); }
     .pillar-icon {
       width: 42px; height: 42px;
       flex-shrink: 0;
       border-radius: 8px;
-      background: rgba(201,161,74,.08);
-      border: 1px solid rgba(201,161,74,.2);
+      background: rgba(184,40,40,.10);
+      border: 1px solid rgba(184,40,40,.22);
       display: flex; align-items: center; justify-content: center;
       font-size: 20px;
     }
@@ -366,7 +366,7 @@
       margin-bottom: 14px;
     }
     .badge-player { background: rgba(74,138,168,.15); border: 1px solid rgba(74,138,168,.35); color: #88bbd4; }
-    .badge-studio { background: rgba(201,161,74,.12); border: 1px solid rgba(201,161,74,.3); color: var(--gold); }
+    .badge-studio { background: rgba(184,40,40,.14); border: 1px solid rgba(184,40,40,.32); color: var(--gold); }
     .audience-title {
       font-family: var(--display);
       font-size: 24px;
@@ -374,8 +374,8 @@
       line-height: 1.2;
       margin-bottom: 10px;
     }
-    .player-title { color: #88bbd4; }
-    .studio-title { color: var(--gold-bright); }
+    .player-title { color: #88ccd4; }
+    .studio-title { color: #f0f4f0; }
     .audience-desc {
       font-family: var(--serif);
       font-size: 14px;
@@ -402,7 +402,7 @@
       margin-top: 1px;
     }
     .dot-player { background: rgba(74,138,168,.15); color: #88bbd4; }
-    .dot-studio { background: rgba(201,161,74,.12); color: var(--gold); }
+    .dot-studio { background: rgba(184,40,40,.14); color: var(--gold); }
     .feature-text {
       font-size: 13px;
       color: var(--ink-dim);
@@ -439,11 +439,11 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(201,161,74,.2), transparent);
+      background: linear-gradient(90deg, transparent, rgba(184,40,40,.22), transparent);
       opacity: 0;
       transition: opacity .2s;
     }
-    .feat-card:hover { border-color: rgba(201,161,74,.25); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+    .feat-card:hover { border-color: rgba(184,40,40,.28); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
     .feat-card:hover::before { opacity: 1; }
     .feat-icon {
       width: 48px; height: 48px;
@@ -451,13 +451,13 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 22px;
       margin-bottom: 16px;
-      border: 1px solid rgba(201,161,74,.15);
+      border: 1px solid rgba(184,40,40,.16);
     }
     .feat-name {
       font-family: var(--display);
       font-size: 15px;
       letter-spacing: .12em;
-      color: var(--gold-bright);
+      color: #e8f0e8;
       margin-bottom: 8px;
     }
     .feat-desc {
@@ -488,10 +488,10 @@
     .quote-block {
       margin: 48px 0;
       padding: 36px 40px;
-      border: 1px solid rgba(201,161,74,.2);
+      border: 1px solid rgba(184,40,40,.22);
       border-left: 3px solid var(--gold);
       border-radius: 0 8px 8px 0;
-      background: rgba(201,161,74,.04);
+      background: rgba(184,40,40,.05);
       text-align: left;
     }
     .quote-text {
@@ -545,14 +545,14 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(201,161,74,.07), transparent);
+      background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(184,40,40,.08), transparent);
       pointer-events: none;
     }
     .cta-title {
       font-family: var(--display);
       font-size: clamp(32px, 5vw, 58px);
       letter-spacing: .1em;
-      color: var(--gold-bright);
+      color: #f0f4f0;
       margin-bottom: 16px;
       position: relative;
     }
@@ -581,17 +581,17 @@
       font-family: var(--display);
       font-size: 15px;
       letter-spacing: .2em;
-      color: #0d0a05;
+      color: #f0e8e0;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(201,161,74,.2), 0 8px 24px rgba(0,0,0,.4);
+      box-shadow: 0 0 40px rgba(184,40,40,.22), 0 8px 24px rgba(0,0,0,.4);
       transition: opacity .15s, transform .15s;
     }
     .btn-cta-primary:hover { opacity: .9; transform: translateY(-2px); }
     .btn-cta-ghost {
       padding: 16px 40px;
       background: transparent;
-      border: 1px solid rgba(201,161,74,.3);
+      border: 1px solid rgba(184,40,40,.32);
       border-radius: 7px;
       font-family: var(--display);
       font-size: 15px;
@@ -600,7 +600,7 @@
       cursor: pointer;
       transition: background .15s, border-color .15s;
     }
-    .btn-cta-ghost:hover { background: rgba(201,161,74,.07); border-color: var(--gold); }
+    .btn-cta-ghost:hover { background: rgba(184,40,40,.08); border-color: var(--gold); }
 
     /* ── Footer ─────────────────────────────────────── */
     footer {
@@ -641,7 +641,7 @@
     .ornament-divider {
       text-align: center;
       font-size: 18px;
-      color: rgba(201,161,74,.3);
+      color: rgba(184,40,40,.32);
       letter-spacing: .4em;
       margin: 0;
       padding: 24px 0;
@@ -699,7 +699,7 @@
     <div class="hero-scroll">
       <span>Scroll</span>
       <svg width="14" height="20" viewBox="0 0 14 20" fill="none">
-        <path d="M7 1v18M1 13l6 6 6-6" stroke="#c9a14a" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M7 1v18M1 13l6 6 6-6" stroke="#e03838" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
   </section>
@@ -853,10 +853,10 @@
           <span class="feat-tag" style="background:rgba(164,138,210,.1);color:var(--aether);border:1px solid rgba(164,138,210,.2)">Studio + Players</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(201,161,74,.1);border-color:rgba(201,161,74,.2)">⚡</div>
+          <div class="feat-icon" style="background:rgba(184,40,40,.11);border-color:rgba(184,40,40,.22)">⚡</div>
           <div class="feat-name">Sprite Forge</div>
           <div class="feat-desc">AI-generated sprite sheets for any character or unit. Athena writes the prompt from the character's own lore. Pixel art, anime, fantasy — your style.</div>
-          <span class="feat-tag" style="background:rgba(201,161,74,.1);color:var(--gold);border:1px solid rgba(201,161,74,.2)">AI-Powered</span>
+          <span class="feat-tag" style="background:rgba(184,40,40,.11);color:var(--gold);border:1px solid rgba(184,40,40,.22)">AI-Powered</span>
         </div>
         <div class="feat-card">
           <div class="feat-icon" style="background:rgba(122,154,82,.1);border-color:rgba(122,154,82,.2)">❦</div>
@@ -871,10 +871,10 @@
           <span class="feat-tag" style="background:rgba(74,138,168,.1);color:var(--tide);border:1px solid rgba(74,138,168,.2)">Studio + Players</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(201,161,74,.1);border-color:rgba(201,161,74,.2)">🦉</div>
+          <div class="feat-icon" style="background:rgba(184,40,40,.11);border-color:rgba(184,40,40,.22)">🦉</div>
           <div class="feat-name">Athena AI</div>
           <div class="feat-desc">A world-aware creative co-pilot that has memorised every element, faction, card, and rule in Abraxas. Ask anything — she knows the canon.</div>
-          <span class="feat-tag" style="background:rgba(201,161,74,.1);color:var(--gold);border:1px solid rgba(201,161,74,.2)">AI-Powered</span>
+          <span class="feat-tag" style="background:rgba(184,40,40,.11);color:var(--gold);border:1px solid rgba(184,40,40,.22)">AI-Powered</span>
         </div>
         <div class="feat-card">
           <div class="feat-icon" style="background:rgba(196,90,47,.1);border-color:rgba(196,90,47,.2)">❝</div>

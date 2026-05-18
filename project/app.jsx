@@ -2,17 +2,17 @@
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "dark",
   "density": "cozy",
-  "accent": "#c9a14a",
+  "accent": "#cc2222",
   "sidebar": "expanded",
   "frame": "gilded"
 }/*EDITMODE-END*/;
 
 const ACCENTS = [
-  '#c9a14a', // gold
+  '#cc2222', // blood
   '#a48ad2', // aether
-  '#7a9a52', // verdant
-  '#c45a2f', // ember
-  '#4a8aa8', // tide
+  '#5a9a50', // verdant
+  '#e07030', // ember
+  '#4a9090', // tide
 ];
 
 const App = () => {
@@ -125,7 +125,7 @@ const App = () => {
           </div>
           <button className="btn" title="Comments"><Icon name="comment" size={14}/></button>
           <div className="avatar" title="Your profile" onClick={() => setShowProfile(true)}
-               style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#5a4a2a,#2a1f0a)',cursor:'pointer'}}>
+               style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#3a1010,#0a0505)',cursor:'pointer'}}>
             {((window.CURRENT_PROFILE?.full_name || window.CURRENT_USER?.email) || 'U')[0].toUpperCase()}
           </div>
           <button className="btn btn-ghost" title="Sign out" onClick={() => window.signOut && window.signOut()}

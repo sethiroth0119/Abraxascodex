@@ -9,16 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Cormorant+SC:wght@400;600&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --gold: #c9a14a;
-      --gold-bright: #e6c068;
-      --ink: #ece3cf;
-      --ink-dim: #b8ad92;
-      --ink-faint: #7a7058;
-      --parchment: #14110b;
-      --parchment-2: #1c1810;
-      --vellum: #2e2719;
-      --rule: #3a3120;
-      --ember: #c45a2f;
+      --gold: #cc2222;
+      --gold-bright: #f03030;
+      --ink: #e8f0e8;
+      --ink-dim: #9ab89a;
+      --ink-faint: #4a6050;
+      --parchment: #050805;
+      --parchment-2: #090e09;
+      --vellum: #162016;
+      --rule: #1a281a;
+      --ember: #e06820;
       --serif: "Cormorant Garamond", serif;
       --display: "Cormorant SC", serif;
       --body: "Inter Tight", system-ui, sans-serif;
@@ -38,14 +38,14 @@
       content: "";
       position: fixed; inset: 0; z-index: 0;
       background: url('abraxas-bg.png') center center / cover no-repeat;
-      filter: saturate(.7) blur(1px);
-      opacity: .35;
+      filter: saturate(.2) hue-rotate(110deg) brightness(.5) blur(2px);
+      opacity: .20;
       pointer-events: none;
     }
     body::after {
       content: "";
       position: fixed; inset: 0; z-index: 1;
-      background: linear-gradient(160deg, rgba(10,7,3,.82) 0%, rgba(16,12,6,.92) 100%);
+      background: linear-gradient(160deg, rgba(2,4,2,.90) 0%, rgba(3,6,3,.97) 100%);
       pointer-events: none;
     }
 
@@ -67,9 +67,9 @@
     .brand-mark {
       width: 56px; height: 56px;
       border-radius: 50%;
-      background: radial-gradient(circle at 40% 35%, #3a2e10, #0d0a05);
+      background: radial-gradient(circle at 40% 35%, #3a1010, #050c05);
       border: 1.5px solid var(--gold);
-      box-shadow: 0 0 24px rgba(201,161,74,.18), inset 0 1px 0 rgba(201,161,74,.15);
+      box-shadow: 0 0 24px rgba(184,40,40,.22), inset 0 1px 0 rgba(184,40,40,.15);
       margin: 0 auto 14px;
       display: flex; align-items: center; justify-content: center;
       font-size: 26px;
@@ -78,8 +78,8 @@
       font-family: var(--display);
       font-size: 26px;
       letter-spacing: .18em;
-      color: var(--gold-bright);
-      text-shadow: 0 0 32px rgba(201,161,74,.25);
+      color: #f0f4f0;
+      text-shadow: 0 0 40px rgba(200,30,30,.25);
     }
     .brand-sub {
       font-family: var(--body);
@@ -97,7 +97,7 @@
       background: var(--parchment-2);
       border: 1px solid var(--rule);
       border-radius: 10px;
-      box-shadow: 0 2px 0 rgba(255,220,140,.04), 0 32px 64px -16px rgba(0,0,0,.85);
+      box-shadow: 0 2px 0 rgba(184,40,40,.04), 0 32px 64px -16px rgba(0,0,0,.88);
       overflow: hidden;
     }
 
@@ -157,13 +157,13 @@
     .btn-primary {
       width: 100%;
       padding: 12px;
-      background: linear-gradient(135deg, #8a6c2c, #c9a14a);
+      background: linear-gradient(135deg, #7a1818, #b82828);
       border: none;
       border-radius: 6px;
       font-family: var(--display);
       font-size: 14px;
       letter-spacing: .14em;
-      color: #0d0a05;
+      color: #f0e8e0;
       font-weight: 600;
       cursor: pointer;
       transition: opacity .15s, transform .1s;
@@ -228,7 +228,7 @@
       padding:7px 14px; border:1px solid var(--rule); border-radius:6px;
       background:rgba(20,17,11,.6); backdrop-filter:blur(8px);
       transition:color .15s, border-color .15s;
-    " onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(201,161,74,.35)'"
+    " onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(184,40,40,.40)'"
        onmouseout="this.style.color='var(--ink-faint)';this.style.borderColor='var(--rule)'">
       ← Back
     </a>
