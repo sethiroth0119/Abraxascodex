@@ -91,7 +91,7 @@ const ThreadsPage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Search threads..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New Thread</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New Thread</button>}
         </div>
       </div>
 

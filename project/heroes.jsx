@@ -154,9 +154,9 @@ const HeroDetail = ({ hero, heroes, onClose, onChange, onSelect, onDelete, start
                   : <div style={{fontFamily:'var(--serif)',fontStyle:'italic',fontSize:18,color:'var(--gold)',marginTop:2}}>{hero.title}</div>}
               </div>
               <div style={{display:'flex',gap:8}}>
-                {!edit && <button className="btn" onClick={()=>setEdit(true)}><Icon name="pencil" size={12}/> Edit</button>}
-                {edit && <button className="btn btn-primary" onClick={()=>setEdit(false)}><Icon name="check" size={12}/> Save</button>}
-                <button className="btn" onClick={()=>{ if(confirm('Delete this character?')) onDelete(hero.id); }}>✕ Delete</button>
+                {!window.IS_VIEWER && !edit && <button className="btn" onClick={()=>setEdit(true)}><Icon name="pencil" size={12}/> Edit</button>}
+                {!window.IS_VIEWER && edit && <button className="btn btn-primary" onClick={()=>setEdit(false)}><Icon name="check" size={12}/> Save</button>}
+                {!window.IS_VIEWER && <button className="btn" onClick={()=>{ if(confirm('Delete this character?')) onDelete(hero.id); }}>✕ Delete</button>}
               </div>
             </div>
 
@@ -338,7 +338,7 @@ const HeroesPage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Search by name, mission..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" onClick={createHero}><Icon name="add" size={14}/> New Character</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={createHero}><Icon name="add" size={14}/> New Character</button>}
         </div>
       </div>
 

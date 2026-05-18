@@ -52,7 +52,7 @@ const ElementsPage = () => {
         </div>
         <div className="page-actions">
           <button className="btn" onClick={()=>window.exportStudio && window.exportStudio()}><Icon name="upload" size={14}/> Export</button>
-          <button className="btn btn-primary" onClick={createElement}><Icon name="add" size={14}/> New element</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={createElement}><Icon name="add" size={14}/> New element</button>}
         </div>
       </div>
 
@@ -83,9 +83,9 @@ const ElementsPage = () => {
           <div className="panel-head">
             <div className="panel-title" style={{color: sample.color}}>{sample.icon} {sample.name}</div>
             <div style={{display:'flex',gap:6}}>
-              {!editing && <button className="btn" onClick={()=>setEditing(true)}><Icon name="pencil" size={12}/> Edit</button>}
-              {editing && <button className="btn btn-primary" onClick={()=>setEditing(false)}><Icon name="check" size={12}/> Done</button>}
-              <button className="btn" onClick={()=>deleteElement(sample.id)} style={{color:'var(--ember)'}}>✕ Delete</button>
+              {!window.IS_VIEWER && !editing && <button className="btn" onClick={()=>setEditing(true)}><Icon name="pencil" size={12}/> Edit</button>}
+              {!window.IS_VIEWER && editing && <button className="btn btn-primary" onClick={()=>setEditing(false)}><Icon name="check" size={12}/> Done</button>}
+              {!window.IS_VIEWER && <button className="btn" onClick={()=>deleteElement(sample.id)} style={{color:'var(--ember)'}}>✕ Delete</button>}
             </div>
           </div>
           <div className="panel-body" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}}>

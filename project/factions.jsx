@@ -40,7 +40,7 @@ const FactionsPage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Filter factions..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" onClick={createFaction}><Icon name="add" size={14}/> New faction</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={createFaction}><Icon name="add" size={14}/> New faction</button>}
         </div>
       </div>
 
@@ -65,8 +65,8 @@ const FactionsPage = () => {
             <div className="panel-head">
               <div className="panel-title" style={{color:selF.color}}>{selF.icon} {selF.name}</div>
               <div style={{display:'flex',gap:6}}>
-                {!editing && <button className="btn" onClick={()=>setEditing(true)}><Icon name="pencil" size={12}/></button>}
-                {editing && <button className="btn btn-primary" onClick={()=>setEditing(false)}><Icon name="check" size={12}/></button>}
+                {!window.IS_VIEWER && !editing && <button className="btn" onClick={()=>setEditing(true)}><Icon name="pencil" size={12}/></button>}
+                {!window.IS_VIEWER && editing && <button className="btn btn-primary" onClick={()=>setEditing(false)}><Icon name="check" size={12}/></button>}
                 <button className="btn" onClick={()=>deleteFaction(selF.id)} style={{color:'var(--ember)'}}>✕</button>
               </div>
             </div>

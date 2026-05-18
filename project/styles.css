@@ -1037,3 +1037,19 @@ image-slot::part(empty){ background:transparent }
   font-family:var(--display);letter-spacing:.18em;text-transform:uppercase;font-size:12px;z-index:50;
   box-shadow:0 20px 40px -10px rgba(0,0,0,.8);
 }
+
+/* ── Viewer mode — community / read-only users ───────────────────────── */
+/* Hides create buttons in page headers globally (engine-pages, lore,     */
+/* timeline, items, campaigns, etc.) without touching every JSX file.     */
+body[data-viewer="true"] .page-header > .btn-primary,
+body[data-viewer="true"] .page-header > button.btn-primary { display:none!important; }
+
+/* Viewer banner — reminds users they are in read-only mode */
+body[data-viewer="true"] .viewer-banner { display:flex!important; }
+.viewer-banner {
+  display:none;
+  align-items:center;gap:8px;padding:7px 18px;
+  background:linear-gradient(90deg,rgba(74,138,168,.18),rgba(74,138,168,.08));
+  border-bottom:1px solid rgba(74,138,168,.25);
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#88bbd4;
+}

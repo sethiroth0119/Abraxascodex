@@ -97,10 +97,10 @@ const LineagePage = () => {
           <div className="page-sub">House Tidemora · {Object.keys(L.nodes).length} souls across {tiers.length} generations · click a scion to inspect</div>
         </div>
         <div className="page-actions">
-          <button className="btn" onClick={() => addChild(L.root)}><Icon name="add" size={14}/> Add to root</button>
-          <button className="btn btn-primary" onClick={() => selNode && addChild(sel)} disabled={!selNode}>
+          {!window.IS_VIEWER && <button className="btn" onClick={() => addChild(L.root)}><Icon name="add" size={14}/> Add to root</button>}
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={() => selNode && addChild(sel)} disabled={!selNode}>
             <Icon name="add" size={14}/> Add child to {selNode?.glyph}
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -199,11 +199,11 @@ const LineagePage = () => {
               )}
 
               <div style={{display:'flex',gap:6,marginTop:14,flexWrap:'wrap'}}>
-                {!edit && <button className="btn" style={{flex:1}} onClick={()=>setEdit(true)}><Icon name="pencil" size={12}/> Edit</button>}
-                {edit && <button className="btn btn-primary" style={{flex:1}} onClick={()=>setEdit(false)}><Icon name="check" size={12}/> Done</button>}
-                <button className="btn" onClick={()=>addChild(sel)}><Icon name="add" size={12}/> Child</button>
-                {sel !== L.root && <button className="btn" onClick={()=>promoteRoot(sel)} title="Make this the lineage root">⌃ Root</button>}
-                {sel !== L.root && <button className="btn" onClick={()=>deleteNode(sel)} style={{color:'var(--ember)'}}>✕ Delete</button>}
+                {!window.IS_VIEWER && !edit && <button className="btn" style={{flex:1}} onClick={()=>setEdit(true)}><Icon name="pencil" size={12}/> Edit</button>}
+                {!window.IS_VIEWER && edit && <button className="btn btn-primary" style={{flex:1}} onClick={()=>setEdit(false)}><Icon name="check" size={12}/> Done</button>}
+                {!window.IS_VIEWER && <button className="btn" onClick={()=>addChild(sel)}><Icon name="add" size={12}/> Child</button>}
+                {!window.IS_VIEWER && sel !== L.root && <button className="btn" onClick={()=>promoteRoot(sel)} title="Make this the lineage root">⌃ Root</button>}
+                {!window.IS_VIEWER && sel !== L.root && <button className="btn" onClick={()=>deleteNode(sel)} style={{color:'var(--ember)'}}>✕ Delete</button>}
               </div>
 
               <div style={{marginTop:14,paddingTop:14,borderTop:'1px solid var(--rule)'}}>

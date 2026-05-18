@@ -167,7 +167,7 @@ const ResourcesPage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Search resources..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New resource</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New resource</button>}
         </div>
       </div>
 
@@ -321,7 +321,7 @@ const ResourcesPage = () => {
                   placeholder="Where it drops, what it crafts, alternative names…"/>
               </div>
               <div style={{display:'flex',gap:6,marginTop:6}}>
-                <button className="btn" onClick={()=>remove(open.id)} style={{color:'var(--ember)'}}>✕ Delete</button>
+                {!window.IS_VIEWER && <button className="btn" onClick={()=>remove(open.id)} style={{color:'var(--ember)'}}>✕ Delete</button>}
                 <div style={{flex:1}}/>
                 <button className="btn" onClick={async ()=>{
                   try {

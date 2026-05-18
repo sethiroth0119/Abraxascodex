@@ -53,6 +53,10 @@ async function requireAuth() {
   window.CURRENT_PROFILE      = profile || { id: user.id, email: user.email, role };
   window.CURRENT_ROLE         = role;
   window.ALL_ROLE_PERMISSIONS = allPerms;
+  window.IS_VIEWER            = (role === 'user');
+
+  // CSS hook so styles.css viewer rules activate immediately
+  document.body.dataset.viewer = window.IS_VIEWER ? 'true' : 'false';
 
   // Build the set of pages this role can see
   const myPerms = allPerms.find(p => p.role === role);

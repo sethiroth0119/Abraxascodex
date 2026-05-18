@@ -125,6 +125,9 @@ const App = () => {
             Sign out
           </button>
         </div>
+        <div className="viewer-banner">
+          👁 You are in <strong style={{marginLeft:4,marginRight:4}}>read-only</strong> mode — browse the world, report bugs, and join threads.
+        </div>
         <div className="content grain">{page}</div>
       </div>
 
