@@ -1,0 +1,7 @@
+name = "abraxascodex"
+main = "worker.js"
+compatibility_date = "2025-05-01"
+
+[assets]
+directory = "./project"
+binding = "ASSETS"
