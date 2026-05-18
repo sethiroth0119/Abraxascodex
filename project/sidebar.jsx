@@ -28,23 +28,33 @@ const NAV = [
     { id:'bugs',      label:'Bug Tracker',      icon:'flask',   badge:null },
   ]},
   { section: 'Game', items: [
-    { id:'campaigns', label:'Campaigns / RLC', icon:'scroll',  badge:null },
-    { id:'worldEvents',label:'World Events',   icon:'flask',   badge:null },
-    { id:'resources', label:'Resources',       icon:'relic',   badge:null },
-    { id:'economy',   label:'Economy',         icon:'coin',    badge:null },
-    { id:'relics',    label:'Items & Relics',  icon:'relic',   badge:null },
-    { id:'playtest',  label:'Playtest Bench',  icon:'flask',   badge:null },
-    { id:'activity',  label:'Activity',        icon:'feed',    badge:null },
-    { id:'settings',  label:'Studio Settings', icon:'sliders', badge:null },
+    { id:'campaigns',  label:'Campaigns / RLC', icon:'scroll',  badge:null },
+    { id:'worldEvents',label:'World Events',    icon:'flask',   badge:null },
+    { id:'resources',  label:'Resources',       icon:'relic',   badge:null },
+    { id:'economy',    label:'Economy',         icon:'coin',    badge:null },
+    { id:'relics',     label:'Items & Relics',  icon:'relic',   badge:null },
+    { id:'playtest',   label:'Playtest Bench',  icon:'flask',   badge:null },
+    { id:'activity',   label:'Activity',        icon:'feed',    badge:null },
+    { id:'settings',   label:'Studio Settings', icon:'sliders', badge:null },
+  ]},
+  { section: 'Admin', items: [
+    { id:'users', label:'Users & Roles', icon:'sliders', badge:null },
   ]},
 ];
 
+const ROLE_COLOR = { admin:'#e6c068', moderator:'#a878d4', staff:'#4a8aa8', user:'#7a9a52' };
+const ROLE_ICON  = { admin:'👑', moderator:'🛡', staff:'⚙️', user:'👤' };
+
 const Sidebar = ({ route, setRoute }) => {
   const [settings] = window.useEntities ? window.useEntities('settings') : [(window.SETTINGS||{})];
-  const studio = settings.studioName || 'Codex Abraxas';
-  const world  = settings.worldName  || 'Hidn Studios';
-  const author = settings.designerName || 'Aurel';
-  const role   = settings.designerRole || 'Lead Designer';
+  const studio  = settings.studioName  || 'Codex Abraxas';
+  const world   = settings.worldName   || 'Hidn Studios';
+
+  // Use the signed-in user's info from Supabase if available
+  const profile = window.CURRENT_PROFILE || {};
+  const author  = profile.full_name || settings.designerName || 'Aurel';
+  const myRole  = window.CURRENT_ROLE || 'user';
+  const allowed = window.ALLOWED_PAGES; // Set or undefined
 
   return (
     <aside className="sidebar grain">
@@ -56,27 +66,42 @@ const Sidebar = ({ route, setRoute }) => {
         </div>
       </div>
       <nav className="nav">
-        {NAV.map(group => (
-          <div key={group.section} className="nav-section">
-            <div className="nav-label">{group.section}</div>
-            {group.items.map(item => (
-              <div key={item.id}
-                   className={`nav-item ${route === item.id ? 'active':''}`}
-                   onClick={() => setRoute(item.id)}
-                   title={item.label}>
-                <span className="nav-icon"><Icon name={item.icon} /></span>
-                <span>{item.label}</span>
-                {item.badge && <span className="nav-badge">{item.badge}</span>}
-              </div>
-            ))}
-          </div>
-        ))}
+        {NAV.map(group => {
+          // Filter items to only those this role can access
+          const visible = group.items.filter(item =>
+            !allowed || allowed.has(item.id)
+          );
+          if (visible.length === 0) return null;
+          return (
+            <div key={group.section} className="nav-section">
+              <div className="nav-label">{group.section}</div>
+              {visible.map(item => (
+                <div key={item.id}
+                     className={`nav-item ${route === item.id ? 'active':''}`}
+                     onClick={() => setRoute(item.id)}
+                     title={item.label}>
+                  <span className="nav-icon"><Icon name={item.icon} /></span>
+                  <span>{item.label}</span>
+                  {item.badge && <span className="nav-badge">{item.badge}</span>}
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </nav>
+
       <div className="sidebar-foot" style={{cursor:'pointer'}} onClick={()=>setRoute('settings')} title="Studio settings">
-        <div className="avatar">{(author[0]||'A').toUpperCase()}</div>
+        <div className="avatar" style={{
+          background: myRole ? `linear-gradient(135deg,${ROLE_COLOR[myRole]}44,${ROLE_COLOR[myRole]}22)` : undefined,
+          border: myRole ? `1px solid ${ROLE_COLOR[myRole]}66` : undefined,
+        }}>
+          {(author[0]||'A').toUpperCase()}
+        </div>
         <div className="you">
           {author}
-          <small>{role}</small>
+          <small style={{color: ROLE_COLOR[myRole] || 'var(--ink-faint)'}}>
+            {ROLE_ICON[myRole]} {myRole}
+          </small>
         </div>
       </div>
     </aside>

@@ -74,7 +74,8 @@ const App = () => {
       case 'ideas':     return <IdeasPage/>;
       case 'resources': return <ResourcesPage/>;
       case 'worldEvents': return <WorldEventsPage/>;
-      default: return <Dashboard setRoute={setRoute}/>;
+      case 'users':     return <UsersAdminPage/>;
+      default: return <Dashboard setRoute={setRoute}/>;;
     }
   })();
 
