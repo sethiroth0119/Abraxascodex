@@ -12,6 +12,18 @@
 <body data-theme="dark" data-density="cozy" data-sidebar="expanded">
   <div id="root"></div>
 
+  <!-- Auth — must load before everything else -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // Block render until session is confirmed; redirect to login if none.
+    (async () => {
+      const session = await window.requireAuth();
+      // Expose user info for the topbar avatars / Settings
+      window.CURRENT_USER = session ? session.user : null;
+    })();
+  </script>
+
   <script src="image-slot.js"></script>
   <script src="claude-shim.js"></script>
 

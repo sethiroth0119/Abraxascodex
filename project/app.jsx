@@ -115,9 +115,14 @@ const App = () => {
             <span className="save-dot"/> {savedFlash ? 'Saving…' : 'Saved'}
           </div>
           <button className="btn" title="Comments"><Icon name="comment" size={14}/></button>
-          <div className="avatar" style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#5a4a2a,#2a1f0a)'}}>M</div>
-          <div className="avatar" style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#4a3a7a,#1a142a)',marginLeft:-12}}>J</div>
-          <div className="avatar" style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#7a4a2a,#2a1408)',marginLeft:-12}}>A</div>
+          <div className="avatar" title={(window.CURRENT_USER && window.CURRENT_USER.email) || 'Signed in'}
+               style={{width:32,height:32,fontSize:14,background:'linear-gradient(135deg,#5a4a2a,#2a1f0a)'}}>
+            {((window.CURRENT_USER && (window.CURRENT_USER.user_metadata?.full_name || window.CURRENT_USER.email)) || 'U')[0].toUpperCase()}
+          </div>
+          <button className="btn btn-ghost" title="Sign out" onClick={() => window.signOut && window.signOut()}
+                  style={{fontSize:12,letterSpacing:'.08em',opacity:.7}}>
+            Sign out
+          </button>
         </div>
         <div className="content grain">{page}</div>
       </div>

@@ -7,12 +7,9 @@ export default {
       return handleClaude(request, env);
     }
 
-    // Redirect bare root to the main HTML file
+    // Redirect bare root to login (auth.js will forward to studio if session exists)
     if (url.pathname === '/' || url.pathname === '') {
-      return Response.redirect(
-        new URL('/Mythic%20Spellbook%20Studio.html', url.origin).href,
-        302
-      );
+      return Response.redirect(new URL('/login.html', url.origin).href, 302);
     }
 
     // Serve everything else from the project/ static assets
