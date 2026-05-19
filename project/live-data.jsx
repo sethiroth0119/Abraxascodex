@@ -62,7 +62,7 @@ function LiveBadge({ ok }) {
       padding:'3px 10px', borderRadius:99,
       background: ok ? 'rgba(74,152,80,.20)' : 'rgba(204,34,34,.20)',
       border: `1px solid ${ok ? 'rgba(74,152,80,.5)' : 'rgba(204,34,34,.5)'}`,
-      color: ok ? '#7ee882' : '#f06060',
+      color: ok ? '#ffffff' : '#f06060',
     }}>
       <span style={{width:6,height:6,borderRadius:'50%',background:'currentColor',boxShadow:'0 0 6px currentColor'}}/>
       {ok ? 'Online' : 'Offline'}
@@ -136,7 +136,7 @@ function StatsTab() {
               {Object.entries(health.data||{}).map(([k,v]) => (
                 <div key={k} style={{background:'rgba(0,0,0,.4)',border:'1px solid rgba(255,255,255,.08)',borderRadius:6,padding:'6px 14px',fontFamily:'var(--mono)',fontSize:11}}>
                   <span style={TEXT_DIM}>{k}{'  '}</span>
-                  <span style={{color: v==='ok'||v===true ? '#7ee882' : '#ffffff',fontWeight:600}}>{String(v)}</span>
+                  <span style={{color:'#ffffff',fontWeight:600}}>{String(v)}</span>
                 </div>
               ))}
             </div>
@@ -164,7 +164,7 @@ function StatsTab() {
             : (
               <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
                 {Object.entries(tax.data||{}).map(([k,v]) => (
-                  <StatBox key={k} label={k} value={typeof v==='number'?(v*100).toFixed(2)+'%':String(v)} color="#7ee882" />
+                  <StatBox key={k} label={k} value={typeof v==='number'?(v*100).toFixed(2)+'%':String(v)} color="#ffffff" />
                 ))}
               </div>
             )
@@ -310,7 +310,8 @@ function NodesTab() {
                   <tr key={n.id||n.name||i} style={{borderBottom:'1px solid rgba(255,255,255,.05)'}}>
                     {Object.values(n).map((v,j)=>(
                       <td key={j} style={{padding:'9px 14px',fontFamily:typeof v==='number'?'var(--mono)':'inherit',fontSize:12,
-                        color:typeof v==='number'?'#7ee882':'#e8f0e8'}}>
+                        color:'#e8f0e8'}}>
+
                         {typeof v==='number' ? fmt(v) : String(v??'—')}
                       </td>
                     ))}
@@ -534,7 +535,7 @@ function PublisherTab() {
                       </div>
                       <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'flex-end'}}>
                         {p.status==='Draft' && (
-                          <button className="btn" style={{fontSize:11,padding:'4px 12px',background:'rgba(74,152,80,.18)',borderColor:'rgba(74,152,80,.4)',color:'#7ee882'}} onClick={()=>publish(p)}>
+                          <button className="btn" style={{fontSize:11,padding:'4px 12px',background:'rgba(74,152,80,.18)',borderColor:'rgba(74,152,80,.4)',color:'#ffffff'}} onClick={()=>publish(p)}>
                             Publish
                           </button>
                         )}
