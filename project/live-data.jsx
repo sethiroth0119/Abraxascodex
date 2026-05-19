@@ -616,23 +616,58 @@ function AccountTab() {
 
   async function fetchPlayerData(tok) {
     setLoadingData(true); setDataErr('');
+
+    // Decode JWT to get user ID
+    let userId = null;
+    try { userId = JSON.parse(atob(tok.split('.')[1])).sub; } catch(e) {}
+
+    // Discover all available tables from the PostgREST OpenAPI root
+    let allTables = [];
     try {
-      // Try multiple endpoint patterns in parallel, use whatever succeeds
-      const results = await Promise.allSettled([
-        MythicSpellbook.me(tok),
-        MythicSpellbook.myDeck(tok),
-        MythicSpellbook.myStats(tok),
-        MythicSpellbook.myInventory(tok),
-      ]);
-      const [pRes, dRes, sRes, iRes] = results;
-      if (pRes.status === 'fulfilled') { setProfile(pRes.value); if (!savedUser) { setSavedUser(pRes.value); localStorage.setItem(MS_USER_KEY, JSON.stringify(pRes.value)); } }
-      if (dRes.status === 'fulfilled') setDeck(dRes.value);
-      if (sRes.status === 'fulfilled') setStats(sRes.value);
-      if (iRes.status === 'fulfilled') setInventory(iRes.value);
-      if (pRes.status === 'rejected' && dRes.status === 'rejected') setDataErr('Could not load player data. The API may not support these endpoints yet.');
-    } catch(e) {
-      setDataErr(e.message || 'Failed to load player data.');
+      const spec = await fetch(MS_API + '/', {
+        headers: { accept: 'application/json', apikey: SB_ANON_KEY, authorization: 'Bearer ' + tok }
+      }).then(r => r.json());
+      allTables = Object.keys(spec?.definitions || spec?.paths || {})
+        .map(k => k.replace(/^\//,'').split('?')[0])
+        .filter(Boolean);
+    } catch(e) {}
+
+    const tryTable = async (names, idField = 'user_id') => {
+      for (const name of names) {
+        try {
+          const q = userId ? `/${name}?${idField}=eq.${userId}&limit=50` : `/${name}?limit=50`;
+          const d = await fetch(MS_API + q, {
+            headers: { accept: 'application/json', apikey: SB_ANON_KEY, authorization: 'Bearer ' + tok }
+          }).then(r => r.json());
+          if (Array.isArray(d) && d.length > 0) return d;
+          // try with 'id' field
+          if (userId && idField !== 'id') {
+            const d2 = await fetch(MS_API + `/${name}?id=eq.${userId}&limit=50`, {
+              headers: { accept: 'application/json', apikey: SB_ANON_KEY, authorization: 'Bearer ' + tok }
+            }).then(r => r.json());
+            if (Array.isArray(d2) && d2.length > 0) return d2;
+          }
+        } catch(e) {}
+      }
+      return null;
+    };
+
+    const [pData, dData, sData, iData] = await Promise.all([
+      tryTable(['profiles','players','users','player_profiles','accounts','characters']),
+      tryTable(['player_cards','decks','player_decks','cards','hand','collection','deck_cards']),
+      tryTable(['player_stats','stats','leaderboard','scores','player_scores','rankings']),
+      tryTable(['inventory','player_inventory','resources','player_resources','items','player_items','currencies']),
+    ]);
+
+    if (pData) { setProfile(pData[0]); setSavedUser(pData[0]); localStorage.setItem(MS_USER_KEY, JSON.stringify(pData[0])); }
+    if (dData) setDeck(dData);
+    if (sData) setStats(sData[0] || sData);
+    if (iData) setInventory(iData);
+
+    if (!pData && !dData && !sData && !iData) {
+      setDataErr('No player data found. Tables may have different names or Row Level Security may be blocking access.');
     }
+
     setLoadingData(false);
   }
 
@@ -872,7 +907,7 @@ function AccountTab() {
       {/* Deck */}
       {!loadingData && activeSection==='deck' && (
         <div style={PANEL}>
-          <div style={SECTION_HEAD}>Your Deck</div>
+          <div style={SECTION_HEAD}>Your Cards / Deck</div>
           {!deck ? (
             <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:12}}>Deck data not available from API.</div>
           ) : (() => {
