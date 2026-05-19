@@ -560,7 +560,7 @@ function PublisherTab() {
                           </button>
                         )}
                         <button className="btn" style={{fontSize:11,padding:'4px 10px'}} onClick={()=>editPost(p)}>Edit</button>
-                        <button className="btn" style={{fontSize:11,padding:'4px 10px',color:'var(--gold)'}} onClick={()=>deletePost(p.id)}>Delete</button>
+                        <button className="btn" style={{fontSize:11,padding:'4px 10px',color:'#ffffff'}} onClick={()=>deletePost(p.id)}>Delete</button>
                       </div>
                     </div>
                   );
@@ -715,7 +715,7 @@ function AccountTab() {
           <div style={{marginTop:20,paddingTop:16,borderTop:'1px solid rgba(255,255,255,.08)',textAlign:'center'}}>
             <div style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM,marginBottom:8}}>Don't have an account?</div>
             <a href="https://playmythicspellbook.com" target="_blank" rel="noopener"
-              style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--gold)',textDecoration:'none',letterSpacing:'.08em'}}>
+              style={{fontFamily:'var(--mono)',fontSize:11,color:'#ffffff',textDecoration:'none',letterSpacing:'.08em'}}>
               Play Mythic Spellbook →
             </a>
           </div>
@@ -749,13 +749,13 @@ function AccountTab() {
           <div style={{fontFamily:'var(--display)',fontSize:20,letterSpacing:'.06em',color:'#ffffff',fontWeight:600}}>{username}</div>
           <div style={{display:'flex',gap:10,marginTop:4,flexWrap:'wrap'}}>
             {level    && <span style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM}}>Level {level}</span>}
-            {faction  && <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--gold)'}}>◆ {faction}</span>}
+            {faction  && <span style={{fontFamily:'var(--mono)',fontSize:10,color:'#ffffff'}}>◆ {faction}</span>}
             {displayUser.email && <span style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM}}>{displayUser.email}</span>}
           </div>
         </div>
-        <div style={{display:'flex',gap:8'}}>
+        <div style={{display:'flex',gap:8}}>
           <button className="btn" style={{fontSize:11}} onClick={()=>fetchPlayerData(token)}>↻ Refresh</button>
-          <button className="btn" style={{fontSize:11,color:'var(--gold)'}} onClick={handleLogout}>Log Out</button>
+          <button className="btn" style={{fontSize:11,color:'#ffffff'}} onClick={handleLogout}>Log Out</button>
         </div>
       </div>
 
@@ -851,7 +851,7 @@ function AccountTab() {
                       return (
                         <div key={card.id||i} style={{background:'rgba(0,0,0,.4)',border:'1px solid rgba(255,255,255,.10)',borderRadius:8,padding:'12px 14px',position:'relative'}}>
                           {qty > 1 && (
-                            <div style={{position:'absolute',top:8,right:10,fontFamily:'var(--mono)',fontSize:11,color:'var(--gold)',fontWeight:700}}>×{qty}</div>
+                            <div style={{position:'absolute',top:8,right:10,fontFamily:'var(--mono)',fontSize:11,color:'#ffffff',fontWeight:700}}>×{qty}</div>
                           )}
                           <div style={{fontFamily:'var(--display)',fontSize:13,letterSpacing:'.04em',color:'#ffffff',marginBottom:4,paddingRight:24}}>{name}</div>
                           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>

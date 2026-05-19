@@ -22,7 +22,7 @@ const LiveStatusWidget = ({ setRoute }) => {
     <div className="panel" style={{gridColumn:'span 2'}}>
       <div className="panel-head">
         <div className="panel-title" style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{width:8,height:8,borderRadius:'50%',background: err ? 'var(--ink-faint)' : status ? 'var(--gold-bright)' : '#666',display:'inline-block',boxShadow: err ? 'none' : status ? '0 0 6px var(--gold-bright)' : 'none'}}/>
+          <span style={{width:8,height:8,borderRadius:'50%',background: err ? '#666' : status ? '#ffffff' : '#666',display:'inline-block',boxShadow: err ? 'none' : status ? '0 0 6px #ffffff' : 'none'}}/>
           Live Server Status
         </div>
         <button className="btn btn-ghost" style={{fontSize:11}} onClick={() => setRoute('live')}>Open Live Data <Icon name="chevron" size={11}/></button>
@@ -33,7 +33,7 @@ const LiveStatusWidget = ({ setRoute }) => {
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
               {[['Health', status.health ?? '—'], ['Reserve', status.reserve ?? '—'], ['Tax Rate', status.tax_rate ?? '—']].map(([k,v]) => (
                 <div key={k} style={{background:'var(--parchment-3)',borderRadius:6,padding:'8px 10px',textAlign:'center'}}>
-                  <div style={{fontFamily:'var(--mono)',fontSize:18,color:'var(--gold-bright)'}}>{v}</div>
+                  <div style={{fontFamily:'var(--mono)',fontSize:18,color:'#ffffff'}}>{v}</div>
                   <div style={{fontSize:10,color:'var(--ink-faint)',marginTop:2,textTransform:'uppercase',letterSpacing:'.1em'}}>{k}</div>
                 </div>
               ))}
