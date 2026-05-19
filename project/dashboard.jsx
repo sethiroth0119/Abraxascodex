@@ -1,3 +1,67 @@
+// Compact live-server status widget for the dashboard
+const LiveStatusWidget = ({ setRoute }) => {
+  const [status, setStatus] = React.useState(null);
+  const [updates, setUpdates] = React.useState([]);
+  const [err, setErr] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const MS_API = 'https://playmythicspellbook.com/api/v1';
+    Promise.all([
+      fetch(`${MS_API}/stats`).then(r=>r.json()).catch(()=>null),
+      fetch(`${MS_API}/updates?limit=3`).then(r=>r.json()).catch(()=>[]),
+    ]).then(([s, u]) => {
+      if (cancelled) return;
+      setStatus(s);
+      setUpdates(Array.isArray(u) ? u : []);
+    }).catch(() => { if (!cancelled) setErr(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <div className="panel" style={{gridColumn:'span 2'}}>
+      <div className="panel-head">
+        <div className="panel-title" style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{width:8,height:8,borderRadius:'50%',background: err ? 'var(--ink-faint)' : status ? 'var(--gold-bright)' : '#666',display:'inline-block',boxShadow: err ? 'none' : status ? '0 0 6px var(--gold-bright)' : 'none'}}/>
+          Live Server Status
+        </div>
+        <button className="btn btn-ghost" style={{fontSize:11}} onClick={() => setRoute('live')}>Open Live Data <Icon name="chevron" size={11}/></button>
+      </div>
+      <div className="panel-body" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        <div>
+          {status ? (
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+              {[['Health', status.health ?? '—'], ['Reserve', status.reserve ?? '—'], ['Tax Rate', status.tax_rate ?? '—']].map(([k,v]) => (
+                <div key={k} style={{background:'var(--parchment-3)',borderRadius:6,padding:'8px 10px',textAlign:'center'}}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:18,color:'var(--gold-bright)'}}>{v}</div>
+                  <div style={{fontSize:10,color:'var(--ink-faint)',marginTop:2,textTransform:'uppercase',letterSpacing:'.1em'}}>{k}</div>
+                </div>
+              ))}
+            </div>
+          ) : err ? (
+            <div style={{color:'var(--ink-faint)',fontSize:12,padding:'8px 0'}}>Could not reach server</div>
+          ) : (
+            <div style={{color:'var(--ink-faint)',fontSize:12,padding:'8px 0'}}>Loading…</div>
+          )}
+        </div>
+        <div>
+          <div style={{fontSize:10,color:'var(--ink-faint)',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:8}}>Recent Updates</div>
+          {updates.length === 0 && !err && <div style={{color:'var(--ink-faint)',fontSize:12}}>No updates yet</div>}
+          {updates.map((u,i) => (
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'4px 0',borderBottom:'1px dashed var(--rule)'}}>
+              <div style={{width:6,height:6,borderRadius:'50%',background:'var(--gold)',marginTop:5,flexShrink:0}}/>
+              <div>
+                <div style={{fontSize:12,color:'var(--ink)'}}>{u.title || u.type || 'Update'}</div>
+                <div style={{fontSize:10,color:'var(--ink-faint)'}}>{u.published_at ? new Date(u.published_at).toLocaleDateString() : ''}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Forge Hall (dashboard)
 const Dashboard = ({ setRoute }) => {
   const featured = window.CARDS.slice(0, 4);
@@ -98,6 +162,10 @@ const Dashboard = ({ setRoute }) => {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="section" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:18}}>
+        <LiveStatusWidget setRoute={setRoute}/>
       </div>
 
       <div className="divider">❧ · ❧</div>

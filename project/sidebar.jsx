@@ -38,6 +38,7 @@ const NAV = [
     { id:'settings',   label:'Studio Settings', icon:'sliders', badge:null },
   ]},
   { section: 'Studio', items: [
+    { id:'live',    label:'Live Data',    icon:'feed',    badge:'LIVE' },
     { id:'sprites', label:'Sprite Forge', icon:'flask', badge:'AI' },
     { id:'users',   label:'Users & Roles', icon:'sliders', badge:null },
   ]},

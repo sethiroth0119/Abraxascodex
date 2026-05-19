@@ -82,6 +82,7 @@ const App = () => {
       case 'worldEvents': return <WorldEventsPage/>;
       case 'sprites':   return <SpriteForge/>;
       case 'users':     return <UsersAdminPage/>;
+      case 'live':      return <LiveDataPage/>;
       case 'profile':   return null; // handled as overlay
       default: return <Dashboard setRoute={setRoute}/>;;
     }
