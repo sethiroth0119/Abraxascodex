@@ -34,8 +34,8 @@ const LABEL_STYLE = {
   textTransform:'uppercase',color:'rgba(255,255,255,.45)',marginBottom:4,
 };
 const VALUE_STYLE = { color:'#ffffff',fontSize:22,fontFamily:'var(--mono)',fontWeight:600 };
-const TEXT = { color:'#e8f0e8' };
-const TEXT_DIM = { color:'rgba(232,240,232,.6)' };
+const TEXT = { color:'#f0f0f0' };
+const TEXT_DIM = { color:'rgba(240,240,240,.55)' };
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function useLive(fetcher, deps = []) {
@@ -96,7 +96,7 @@ function KVRow({ label, value, color }) {
   return (
     <div style={{display:'grid',gridTemplateColumns:'160px 1fr',gap:12,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.06)',alignItems:'center'}}>
       <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:11}}>{label}</div>
-      <div style={{fontFamily:'var(--mono)',fontSize:12,color:color||'#e8f0e8',fontWeight:500}}>{String(value)}</div>
+      <div style={{fontFamily:'var(--mono)',fontSize:12,color:color||'#f0f0f0',fontWeight:500}}>{String(value)}</div>
     </div>
   );
 }
@@ -235,7 +235,7 @@ function CorporationsTab() {
                   <tr key={c.id||c.name||i} style={{borderBottom:'1px solid rgba(255,255,255,.05)'}}>
                     {Object.values(c).map((v,j)=>(
                       <td key={j} style={{padding:'9px 14px',fontFamily:typeof v==='number'?'var(--mono)':'inherit',fontSize:12,
-                        color:typeof v==='number'?'var(--gold-bright)':'#e8f0e8'}}>
+                        color:typeof v==='number'?'var(--gold-bright)':'#f0f0f0'}}>
                         {typeof v==='number' ? fmt(v) : String(v??'—')}
                       </td>
                     ))}
@@ -310,7 +310,7 @@ function NodesTab() {
                   <tr key={n.id||n.name||i} style={{borderBottom:'1px solid rgba(255,255,255,.05)'}}>
                     {Object.values(n).map((v,j)=>(
                       <td key={j} style={{padding:'9px 14px',fontFamily:typeof v==='number'?'var(--mono)':'inherit',fontSize:12,
-                        color:'#e8f0e8'}}>
+                        color:'#f0f0f0'}}>
 
                         {typeof v==='number' ? fmt(v) : String(v??'—')}
                       </td>
@@ -363,7 +363,7 @@ function LiveUpdatesTab() {
                 )}
               </div>
               {(u.body||u.description||u.content||u.message) && (
-                <div style={{fontFamily:'var(--serif)',fontSize:13,color:'rgba(232,240,232,.75)',lineHeight:1.6}}>
+                <div style={{fontFamily:'var(--serif)',fontSize:13,color:'rgba(240,240,240,.75)',lineHeight:1.6}}>
                   {u.body||u.description||u.content||u.message}
                 </div>
               )}
@@ -520,7 +520,7 @@ function PublisherTab() {
                           <span style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.08em',textTransform:'uppercase',color:ti.color}}>{ti.label}</span>
                         </div>
                         {p.body && (
-                          <div style={{fontFamily:'var(--serif)',fontSize:12,color:'rgba(232,240,232,.65)',lineHeight:1.55,
+                          <div style={{fontFamily:'var(--serif)',fontSize:12,color:'rgba(240,240,240,.65)',lineHeight:1.55,
                             overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>
                             {p.body}
                           </div>
@@ -529,7 +529,7 @@ function PublisherTab() {
                           {p.publishedAt && <span>Published {new Date(p.publishedAt).toLocaleDateString()}</span>}
                           {p.scheduledFor && p.status==='Scheduled' && <span>Scheduled {new Date(p.scheduledFor).toLocaleDateString()}</span>}
                           {p.tags && p.tags.split(',').map(t=>t.trim()).filter(Boolean).map(t=>(
-                            <span key={t} style={{background:'rgba(255,255,255,.07)',padding:'1px 7px',borderRadius:4,color:'rgba(232,240,232,.5)'}}>{t}</span>
+                            <span key={t} style={{background:'rgba(255,255,255,.07)',padding:'1px 7px',borderRadius:4,color:'rgba(240,240,240,.5)'}}>{t}</span>
                           ))}
                         </div>
                       </div>
@@ -573,7 +573,7 @@ const LiveDataPage = () => {
           <div className="page-title" style={{color:'#ffffff'}}>
             <span className="ornament">📡</span>Live Data
           </div>
-          <div className="page-sub" style={{color:'rgba(232,240,232,.55)'}}>playmythicspellbook.com · real-time</div>
+          <div className="page-sub" style={{color:'rgba(240,240,240,.55)'}}>playmythicspellbook.com · real-time</div>
         </div>
       </div>
 
@@ -584,7 +584,7 @@ const LiveDataPage = () => {
             fontFamily:'var(--mono)',fontSize:11,letterSpacing:'.10em',textTransform:'uppercase',
             border: tab===t.id ? '1px solid rgba(255,255,255,.25)' : '1px solid rgba(255,255,255,.08)',
             background: tab===t.id ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.4)',
-            color: tab===t.id ? '#ffffff' : 'rgba(232,240,232,.5)',
+            color: tab===t.id ? '#ffffff' : 'rgba(240,240,240,.5)',
             backdropFilter:'blur(4px)',transition:'all .15s',
           }}>
             <span>{t.icon}</span>{t.label}
