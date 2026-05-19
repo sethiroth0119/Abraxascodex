@@ -2,16 +2,40 @@
 // Tabs: Live Stats · Corporations · Nodes · Updates · Game Update Publisher
 
 const MS_API = 'https://playmythicspellbook.com/api/v1';
-const msGet = p => fetch(MS_API + p, { headers: { accept: 'application/json' } }).then(r => r.json());
+const msGet = p => fetch(MS_API + p, { headers: { accept: 'application/json' } }).then(r => r.json()).then(d => {
+  // Detect upstream error shape {error: ..., detail: ...}
+  if (d && typeof d === 'object' && !Array.isArray(d) && d.error) throw new Error(d.detail || d.error);
+  return d;
+});
 
 const MythicSpellbook = {
-  health:       ()    => msGet('/health'),
+  health:       ()      => msGet('/health'),
   corporations: (n=200) => msGet('/corporations?limit=' + n),
-  reserve:      ()    => msGet('/reserve'),
-  tax:          ()    => msGet('/tax'),
+  reserve:      ()      => msGet('/reserve'),
+  tax:          ()      => msGet('/tax'),
   nodes:        (n=300) => msGet('/nodes?limit=' + n),
   updates:      (n=50)  => msGet('/updates?limit=' + n),
 };
+
+// ── shared styles ─────────────────────────────────────────────────────────────
+const PANEL = {
+  background:'rgba(5,8,5,.88)',
+  border:'1px solid rgba(255,255,255,.10)',
+  borderRadius:10,
+  padding:'16px 20px',
+  backdropFilter:'blur(4px)',
+};
+const SECTION_HEAD = {
+  fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.18em',
+  textTransform:'uppercase',color:'rgba(255,255,255,.45)',marginBottom:12,
+};
+const LABEL_STYLE = {
+  fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.14em',
+  textTransform:'uppercase',color:'rgba(255,255,255,.45)',marginBottom:4,
+};
+const VALUE_STYLE = { color:'#ffffff',fontSize:22,fontFamily:'var(--mono)',fontWeight:600 };
+const TEXT = { color:'#e8f0e8' };
+const TEXT_DIM = { color:'rgba(232,240,232,.6)' };
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function useLive(fetcher, deps = []) {
@@ -35,10 +59,10 @@ function LiveBadge({ ok }) {
     <span style={{
       display:'inline-flex', alignItems:'center', gap:5,
       fontFamily:'var(--mono)', fontSize:10, letterSpacing:'.14em', textTransform:'uppercase',
-      padding:'2px 8px', borderRadius:99,
-      background: ok ? 'rgba(74,152,80,.15)' : 'rgba(204,34,34,.15)',
-      border: `1px solid ${ok ? 'rgba(74,152,80,.4)' : 'rgba(204,34,34,.4)'}`,
-      color: ok ? '#6fcc74' : '#f03030',
+      padding:'3px 10px', borderRadius:99,
+      background: ok ? 'rgba(74,152,80,.20)' : 'rgba(204,34,34,.20)',
+      border: `1px solid ${ok ? 'rgba(74,152,80,.5)' : 'rgba(204,34,34,.5)'}`,
+      color: ok ? '#7ee882' : '#f06060',
     }}>
       <span style={{width:6,height:6,borderRadius:'50%',background:'currentColor',boxShadow:'0 0 6px currentColor'}}/>
       {ok ? 'Online' : 'Offline'}
@@ -47,15 +71,32 @@ function LiveBadge({ ok }) {
 }
 
 function Spinner() {
-  return <span style={{display:'inline-block',width:16,height:16,border:'2px solid var(--rule)',borderTopColor:'var(--gold)',borderRadius:'50%',animation:'spin .7s linear infinite'}} />;
+  return <span style={{display:'inline-block',width:18,height:18,border:'2px solid rgba(255,255,255,.15)',borderTopColor:'var(--gold)',borderRadius:'50%',animation:'spin .7s linear infinite'}} />;
+}
+
+function ErrorBox({ msg }) {
+  return (
+    <div style={{padding:'12px 16px',background:'rgba(180,30,30,.12)',border:'1px solid rgba(200,60,60,.25)',borderRadius:8,fontFamily:'var(--mono)',fontSize:12,color:'#f08080'}}>
+      ⚠ {msg}
+    </div>
+  );
 }
 
 function StatBox({ label, value, sub, color }) {
   return (
-    <div style={{background:'var(--parchment-2)',border:'1px solid var(--rule)',borderRadius:'var(--r-md)',padding:'16px 20px',flex:1,minWidth:140}}>
-      <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--ink-faint)',marginBottom:6}}>{label}</div>
-      <div style={{fontFamily:'var(--display)',fontSize:28,color:color||'var(--ink)',lineHeight:1}}>{value ?? '—'}</div>
-      {sub && <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)',marginTop:4}}>{sub}</div>}
+    <div style={{background:'rgba(0,0,0,.4)',border:'1px solid rgba(255,255,255,.10)',borderRadius:8,padding:'14px 18px',flex:1,minWidth:130}}>
+      <div style={LABEL_STYLE}>{label}</div>
+      <div style={{...VALUE_STYLE,color:color||'#ffffff'}}>{value ?? '—'}</div>
+      {sub && <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:10,marginTop:4}}>{sub}</div>}
+    </div>
+  );
+}
+
+function KVRow({ label, value, color }) {
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'160px 1fr',gap:12,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.06)',alignItems:'center'}}>
+      <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:11}}>{label}</div>
+      <div style={{fontFamily:'var(--mono)',fontSize:12,color:color||'#e8f0e8',fontWeight:500}}>{String(value)}</div>
     </div>
   );
 }
@@ -78,64 +119,56 @@ function StatsTab() {
   function reload() { health.reload(); reserve.reload(); tax.reload(); }
 
   return (
-    <div>
-      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      {/* Status bar */}
+      <div style={{display:'flex',alignItems:'center',gap:12}}>
         <LiveBadge ok={isUp} />
-        <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-faint)'}}>playmythicspellbook.com</span>
+        <span style={{fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM}}>playmythicspellbook.com</span>
         <button className="btn" onClick={reload} style={{marginLeft:'auto'}}>↻ Refresh</button>
       </div>
 
       {/* Health */}
-      <div className="panel" style={{marginBottom:18}}>
-        <div className="panel-head"><div className="panel-title">Server Health</div></div>
-        <div className="panel-body">
-          {health.loading ? <Spinner/> : health.error
-            ? <span style={{color:'var(--gold)',fontFamily:'var(--mono)',fontSize:12}}>⚠ {health.error}</span>
+      <div style={PANEL}>
+        <div style={SECTION_HEAD}>Server Health</div>
+        {health.loading ? <Spinner/> : health.error ? <ErrorBox msg={health.error}/>
+          : (
+            <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+              {Object.entries(health.data||{}).map(([k,v]) => (
+                <div key={k} style={{background:'rgba(0,0,0,.4)',border:'1px solid rgba(255,255,255,.08)',borderRadius:6,padding:'6px 14px',fontFamily:'var(--mono)',fontSize:11}}>
+                  <span style={TEXT_DIM}>{k}{'  '}</span>
+                  <span style={{color: v==='ok'||v===true ? '#7ee882' : '#ffffff',fontWeight:600}}>{String(v)}</span>
+                </div>
+              ))}
+            </div>
+          )
+        }
+      </div>
+
+      {/* Reserve + Tax */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+        <div style={PANEL}>
+          <div style={SECTION_HEAD}>Reserve</div>
+          {reserve.loading ? <Spinner/> : reserve.error ? <ErrorBox msg={reserve.error}/>
             : (
               <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
-                {Object.entries(health.data||{}).map(([k,v]) => (
-                  <div key={k} style={{background:'var(--parchment-3)',border:'1px solid var(--rule)',borderRadius:'var(--r-sm)',padding:'6px 12px',fontFamily:'var(--mono)',fontSize:11}}>
-                    <span style={{color:'var(--ink-faint)',marginRight:6}}>{k}</span>
-                    <span style={{color: v==='ok'||v===true?'#6fcc74':'var(--ink)'}}>{String(v)}</span>
-                  </div>
+                {Object.entries(reserve.data||{}).map(([k,v]) => (
+                  <StatBox key={k} label={k} value={typeof v==='number'?fmt(v):String(v)} color="var(--gold-bright)" />
                 ))}
               </div>
             )
           }
         </div>
-      </div>
-
-      {/* Reserve + Tax */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-        <div className="panel">
-          <div className="panel-head"><div className="panel-title">Reserve</div></div>
-          <div className="panel-body">
-            {reserve.loading ? <Spinner/> : reserve.error
-              ? <span style={{color:'var(--gold)',fontFamily:'var(--mono)',fontSize:12}}>⚠ {reserve.error}</span>
-              : (
-                <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
-                  {Object.entries(reserve.data||{}).map(([k,v]) => (
-                    <StatBox key={k} label={k} value={typeof v==='number'?fmt(v):String(v)} color="var(--gold-bright)" />
-                  ))}
-                </div>
-              )
-            }
-          </div>
-        </div>
-        <div className="panel">
-          <div className="panel-head"><div className="panel-title">Tax</div></div>
-          <div className="panel-body">
-            {tax.loading ? <Spinner/> : tax.error
-              ? <span style={{color:'var(--gold)',fontFamily:'var(--mono)',fontSize:12}}>⚠ {tax.error}</span>
-              : (
-                <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
-                  {Object.entries(tax.data||{}).map(([k,v]) => (
-                    <StatBox key={k} label={k} value={typeof v==='number'?(v*100).toFixed(2)+'%':String(v)} color="var(--tide)" />
-                  ))}
-                </div>
-              )
-            }
-          </div>
+        <div style={PANEL}>
+          <div style={SECTION_HEAD}>Tax</div>
+          {tax.loading ? <Spinner/> : tax.error ? <ErrorBox msg={tax.error}/>
+            : (
+              <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
+                {Object.entries(tax.data||{}).map(([k,v]) => (
+                  <StatBox key={k} label={k} value={typeof v==='number'?(v*100).toFixed(2)+'%':String(v)} color="#7ee882" />
+                ))}
+              </div>
+            )
+          }
         </div>
       </div>
     </div>
@@ -169,46 +202,48 @@ function CorporationsTab() {
   return (
     <div>
       <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
-        <input className="field-input" style={{flex:1,minWidth:200}} placeholder="Search corporations…"
+        <input className="field-input" style={{flex:1,minWidth:200,background:'rgba(0,0,0,.5)',color:'#ffffff',border:'1px solid rgba(255,255,255,.15)'}} placeholder="Search corporations…"
           value={search} onChange={e=>setSearch(e.target.value)}/>
         {sortKeys.length>0 && (
-          <select className="field-select" style={{width:160}} value={sort} onChange={e=>setSort(e.target.value)}>
+          <select className="field-select" style={{width:160,background:'rgba(0,0,0,.5)',color:'#ffffff',border:'1px solid rgba(255,255,255,.15)'}} value={sort} onChange={e=>setSort(e.target.value)}>
             <option value="name">Sort: Name</option>
             {sortKeys.map(k=><option key={k} value={k}>Sort: {k}</option>)}
           </select>
         )}
         <button className="btn" onClick={reload}>↻ Refresh</button>
-        <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-faint)'}}>{corps.length} results</span>
+        <span style={{fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM}}>{corps.length} results</span>
       </div>
 
       {loading ? <div style={{padding:40,textAlign:'center'}}><Spinner/></div>
-       : error ? <div style={{color:'var(--gold)',padding:20,fontFamily:'var(--mono)',fontSize:12}}>⚠ {error}</div>
-       : corps.length===0 ? <div style={{color:'var(--ink-faint)',padding:20}}>No corporations found.</div>
+       : error ? <ErrorBox msg={error}/>
+       : corps.length===0 ? <div style={{...TEXT_DIM,padding:20}}>No corporations found.</div>
        : (
-        <div style={{overflowX:'auto'}}>
-          <table className="ledger">
-            <thead>
-              <tr>
-                {Object.keys(corps[0]||{}).map(k=>(
-                  <th key={k} style={{cursor:'pointer',userSelect:'none'}} onClick={()=>setSort(k)}>
-                    {k}{sort===k?' ↓':''}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {corps.map((c,i)=>(
-                <tr key={c.id||c.name||i}>
-                  {Object.values(c).map((v,j)=>(
-                    <td key={j} style={{fontFamily:typeof v==='number'?'var(--mono)':'inherit',
-                      color:typeof v==='number'?'var(--gold-bright)':'var(--ink)'}}>
-                      {typeof v==='number' ? fmt(v) : String(v??'—')}
-                    </td>
+        <div style={{...PANEL,padding:0,overflow:'hidden'}}>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse'}}>
+              <thead>
+                <tr style={{background:'rgba(0,0,0,.4)'}}>
+                  {Object.keys(corps[0]||{}).map(k=>(
+                    <th key={k} style={{padding:'10px 14px',textAlign:'left',fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(255,255,255,.5)',cursor:'pointer',userSelect:'none',borderBottom:'1px solid rgba(255,255,255,.08)',whiteSpace:'nowrap'}} onClick={()=>setSort(k)}>
+                      {k}{sort===k?' ↓':''}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {corps.map((c,i)=>(
+                  <tr key={c.id||c.name||i} style={{borderBottom:'1px solid rgba(255,255,255,.05)'}}>
+                    {Object.values(c).map((v,j)=>(
+                      <td key={j} style={{padding:'9px 14px',fontFamily:typeof v==='number'?'var(--mono)':'inherit',fontSize:12,
+                        color:typeof v==='number'?'var(--gold-bright)':'#e8f0e8'}}>
+                        {typeof v==='number' ? fmt(v) : String(v??'—')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
        )
       }
@@ -242,46 +277,48 @@ function NodesTab() {
   return (
     <div>
       <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
-        <input className="field-input" style={{flex:1,minWidth:200}} placeholder="Search nodes…"
+        <input className="field-input" style={{flex:1,minWidth:200,background:'rgba(0,0,0,.5)',color:'#ffffff',border:'1px solid rgba(255,255,255,.15)'}} placeholder="Search nodes…"
           value={search} onChange={e=>setSearch(e.target.value)}/>
         {sortKeys.length>0 && (
-          <select className="field-select" style={{width:160}} value={sort} onChange={e=>setSort(e.target.value)}>
+          <select className="field-select" style={{width:160,background:'rgba(0,0,0,.5)',color:'#ffffff',border:'1px solid rgba(255,255,255,.15)'}} value={sort} onChange={e=>setSort(e.target.value)}>
             <option value="name">Sort: Name</option>
             {sortKeys.map(k=><option key={k} value={k}>Sort: {k}</option>)}
           </select>
         )}
         <button className="btn" onClick={reload}>↻ Refresh</button>
-        <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-faint)'}}>{nodes.length} results</span>
+        <span style={{fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM}}>{nodes.length} results</span>
       </div>
 
       {loading ? <div style={{padding:40,textAlign:'center'}}><Spinner/></div>
-       : error ? <div style={{color:'var(--gold)',padding:20,fontFamily:'var(--mono)',fontSize:12}}>⚠ {error}</div>
-       : nodes.length===0 ? <div style={{color:'var(--ink-faint)',padding:20}}>No nodes found.</div>
+       : error ? <ErrorBox msg={error}/>
+       : nodes.length===0 ? <div style={{...TEXT_DIM,padding:20}}>No nodes found.</div>
        : (
-        <div style={{overflowX:'auto'}}>
-          <table className="ledger">
-            <thead>
-              <tr>
-                {Object.keys(nodes[0]||{}).map(k=>(
-                  <th key={k} style={{cursor:'pointer',userSelect:'none'}} onClick={()=>setSort(k)}>
-                    {k}{sort===k?' ↓':''}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {nodes.map((n,i)=>(
-                <tr key={n.id||n.name||i}>
-                  {Object.values(n).map((v,j)=>(
-                    <td key={j} style={{fontFamily:typeof v==='number'?'var(--mono)':'inherit',
-                      color:typeof v==='number'?'var(--tide)':'var(--ink)'}}>
-                      {typeof v==='number' ? fmt(v) : String(v??'—')}
-                    </td>
+        <div style={{...PANEL,padding:0,overflow:'hidden'}}>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse'}}>
+              <thead>
+                <tr style={{background:'rgba(0,0,0,.4)'}}>
+                  {Object.keys(nodes[0]||{}).map(k=>(
+                    <th key={k} style={{padding:'10px 14px',textAlign:'left',fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(255,255,255,.5)',cursor:'pointer',userSelect:'none',borderBottom:'1px solid rgba(255,255,255,.08)',whiteSpace:'nowrap'}} onClick={()=>setSort(k)}>
+                      {k}{sort===k?' ↓':''}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {nodes.map((n,i)=>(
+                  <tr key={n.id||n.name||i} style={{borderBottom:'1px solid rgba(255,255,255,.05)'}}>
+                    {Object.values(n).map((v,j)=>(
+                      <td key={j} style={{padding:'9px 14px',fontFamily:typeof v==='number'?'var(--mono)':'inherit',fontSize:12,
+                        color:typeof v==='number'?'#7ee882':'#e8f0e8'}}>
+                        {typeof v==='number' ? fmt(v) : String(v??'—')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
        )
       }
@@ -301,41 +338,34 @@ function LiveUpdatesTab() {
   return (
     <div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-        <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-faint)'}}>{updates.length} live updates</span>
+        <span style={{fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM}}>{updates.length} live updates</span>
         <button className="btn" onClick={reload}>↻ Refresh</button>
       </div>
 
       {loading ? <div style={{padding:40,textAlign:'center'}}><Spinner/></div>
-       : error ? <div style={{color:'var(--gold)',padding:20,fontFamily:'var(--mono)',fontSize:12}}>⚠ {error}</div>
-       : updates.length===0 ? <div style={{color:'var(--ink-faint)',padding:20}}>No updates from server.</div>
+       : error ? <ErrorBox msg={error}/>
+       : updates.length===0 ? <div style={{...PANEL,...TEXT_DIM,fontSize:13,fontFamily:'var(--mono)'}}>No updates from server yet.</div>
        : (
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           {updates.map((u,i) => (
             <div key={u.id||i} style={{
-              background:'var(--parchment-2)',border:'1px solid var(--rule)',
-              borderLeft:'3px solid var(--gold)',borderRadius:'var(--r-md)',padding:'14px 16px'
+              ...PANEL,borderLeft:'3px solid var(--gold)',padding:'14px 18px'
             }}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,flexWrap:'wrap',marginBottom:6}}>
-                <div style={{fontFamily:'var(--display)',fontSize:14,letterSpacing:'.08em',color:'var(--ink)'}}>
+                <div style={{fontFamily:'var(--display)',fontSize:15,letterSpacing:'.06em',color:'#ffffff',fontWeight:600}}>
                   {u.title || u.name || `Update #${u.id||i+1}`}
                 </div>
                 {(u.date||u.created_at||u.timestamp) && (
-                  <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)'}}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM}}>
                     {new Date(u.date||u.created_at||u.timestamp).toLocaleDateString()}
                   </div>
                 )}
               </div>
               {(u.body||u.description||u.content||u.message) && (
-                <div style={{fontFamily:'var(--serif)',fontSize:13,color:'var(--ink-dim)',lineHeight:1.55}}>
+                <div style={{fontFamily:'var(--serif)',fontSize:13,color:'rgba(232,240,232,.75)',lineHeight:1.6}}>
                   {u.body||u.description||u.content||u.message}
                 </div>
               )}
-              {Object.entries(u).filter(([k])=>!['id','title','name','body','description','content','message','date','created_at','timestamp'].includes(k)).map(([k,v])=>(
-                <div key={k} style={{marginTop:6,fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)'}}>
-                  <span style={{marginRight:8}}>{k}:</span>
-                  <span style={{color:'var(--ink-dim)'}}>{String(v)}</span>
-                </div>
-              ))}
             </div>
           ))}
         </div>
@@ -347,34 +377,23 @@ function LiveUpdatesTab() {
 
 // ── Tab: Game Update Publisher ────────────────────────────────────────────────
 const UPDATE_TYPES = [
-  { id:'patch',       label:'Patch Notes',      icon:'🔧', color:'#4a9850' },
-  { id:'hotfix',      label:'Hotfix',           icon:'🚨', color:'#cc2222' },
-  { id:'announcement',label:'Announcement',     icon:'📣', color:'#c9a14a' },
-  { id:'event',       label:'Live Event',       icon:'⚡', color:'#a48ad2' },
-  { id:'maintenance', label:'Maintenance',      icon:'🛠', color:'#4a9090' },
-  { id:'balance',     label:'Balance Update',   icon:'⚖️', color:'#e07030' },
+  { id:'patch',       label:'Patch Notes',  icon:'🔧', color:'#4a9850' },
+  { id:'hotfix',      label:'Hotfix',       icon:'🚨', color:'#cc2222' },
+  { id:'announcement',label:'Announcement', icon:'📣', color:'#c9a14a' },
+  { id:'event',       label:'Live Event',   icon:'⚡', color:'#a48ad2' },
+  { id:'maintenance', label:'Maintenance',  icon:'🛠', color:'#4a9090' },
+  { id:'balance',     label:'Balance',      icon:'⚖️', color:'#e07030' },
 ];
 
 const UPDATE_STATUSES = ['Draft','Scheduled','Published','Archived'];
 
 function PublisherTab() {
   const [posts, setPosts] = window.useEntities ? window.useEntities('gameUpdates') : React.useState([]);
-  const [editing, setEditing] = React.useState(null); // null = list, 'new' = new, id = edit
+  const [editing, setEditing] = React.useState(null);
   const [form, setForm] = React.useState({});
 
   function newPost() {
-    setForm({
-      id: 'upd-' + Date.now(),
-      title: '',
-      type: 'patch',
-      status: 'Draft',
-      version: '',
-      body: '',
-      tags: '',
-      scheduledFor: '',
-      publishedAt: '',
-      createdAt: new Date().toISOString(),
-    });
+    setForm({ id:'upd-'+Date.now(), title:'', type:'patch', status:'Draft', version:'', body:'', tags:'', scheduledFor:'', publishedAt:'', createdAt:new Date().toISOString() });
     setEditing('new');
   }
 
@@ -382,9 +401,7 @@ function PublisherTab() {
 
   function save() {
     if (!form.title?.trim()) return;
-    const updated = editing==='new'
-      ? [...(posts||[]), form]
-      : (posts||[]).map(p => p.id===editing ? form : p);
+    const updated = editing==='new' ? [...(posts||[]), form] : (posts||[]).map(p => p.id===editing ? form : p);
     setPosts(updated);
     setEditing(null);
   }
@@ -395,64 +412,60 @@ function PublisherTab() {
   }
 
   function publish(p) {
-    const now = new Date().toISOString();
-    setPosts((posts||[]).map(x => x.id===p.id ? {...x, status:'Published', publishedAt:now} : x));
+    setPosts((posts||[]).map(x => x.id===p.id ? {...x, status:'Published', publishedAt:new Date().toISOString()} : x));
   }
 
   const typeInfo = id => UPDATE_TYPES.find(t=>t.id===id) || UPDATE_TYPES[0];
 
+  const inputStyle = { background:'rgba(0,0,0,.5)', color:'#ffffff', border:'1px solid rgba(255,255,255,.15)', borderRadius:6, padding:'8px 12px', width:'100%', fontFamily:'var(--body)', fontSize:13, outline:'none' };
+
   if (editing !== null) {
-    const ti = typeInfo(form.type);
     return (
       <div>
         <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
           <button className="btn" onClick={()=>setEditing(null)}>← Back</button>
-          <div style={{fontFamily:'var(--display)',fontSize:18,letterSpacing:'.08em',color:'var(--ink)'}}>
+          <div style={{fontFamily:'var(--display)',fontSize:18,letterSpacing:'.06em',color:'#ffffff'}}>
             {editing==='new' ? 'New Game Update' : 'Edit Update'}
           </div>
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
-          <div className="field">
-            <div className="field-label">Title</div>
-            <input className="field-input" value={form.title||''} onChange={e=>setForm({...form,title:e.target.value})} placeholder="e.g. Patch 1.4.2 — Balance Pass"/>
+        <div style={{...PANEL,display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+            {[['Title','title','e.g. Patch 1.4.2 — Balance Pass'],['Version','version','e.g. v1.4.2'],['Tags','tags','balance, pvp, cards']].map(([lbl,key,ph])=>(
+              <div key={key} style={key==='title'?{gridColumn:'span 2'}:{}}>
+                <div style={{...LABEL_STYLE,marginBottom:6}}>{lbl}</div>
+                <input style={inputStyle} value={form[key]||''} onChange={e=>setForm({...form,[key]:e.target.value})} placeholder={ph}/>
+              </div>
+            ))}
+            <div>
+              <div style={{...LABEL_STYLE,marginBottom:6}}>Type</div>
+              <select style={{...inputStyle,cursor:'pointer'}} value={form.type||'patch'} onChange={e=>setForm({...form,type:e.target.value})}>
+                {UPDATE_TYPES.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{...LABEL_STYLE,marginBottom:6}}>Status</div>
+              <select style={{...inputStyle,cursor:'pointer'}} value={form.status||'Draft'} onChange={e=>setForm({...form,status:e.target.value})}>
+                {UPDATE_STATUSES.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div style={{gridColumn:'span 2'}}>
+              <div style={{...LABEL_STYLE,marginBottom:6}}>Schedule For</div>
+              <input type="datetime-local" style={inputStyle} value={(form.scheduledFor||'').slice(0,16)} onChange={e=>setForm({...form,scheduledFor:e.target.value})}/>
+            </div>
           </div>
-          <div className="field">
-            <div className="field-label">Version</div>
-            <input className="field-input" value={form.version||''} onChange={e=>setForm({...form,version:e.target.value})} placeholder="e.g. v1.4.2"/>
-          </div>
-          <div className="field">
-            <div className="field-label">Type</div>
-            <select className="field-select" value={form.type||'patch'} onChange={e=>setForm({...form,type:e.target.value})}>
-              {UPDATE_TYPES.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <div className="field-label">Status</div>
-            <select className="field-select" value={form.status||'Draft'} onChange={e=>setForm({...form,status:e.target.value})}>
-              {UPDATE_STATUSES.map(s=><option key={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <div className="field-label">Schedule For</div>
-            <input className="field-input" type="datetime-local" value={(form.scheduledFor||'').slice(0,16)} onChange={e=>setForm({...form,scheduledFor:e.target.value})}/>
-          </div>
-          <div className="field">
-            <div className="field-label">Tags (comma separated)</div>
-            <input className="field-input" value={form.tags||''} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="e.g. balance, pvp, cards"/>
-          </div>
-        </div>
 
-        <div className="field">
-          <div className="field-label">Body / Patch Notes</div>
-          <textarea className="field-area" rows={16} style={{minHeight:320,fontFamily:'var(--body)',fontStyle:'normal',fontSize:13}}
-            value={form.body||''} onChange={e=>setForm({...form,body:e.target.value})}
-            placeholder={`Write your patch notes here...\n\n## What's Changed\n- Improved X\n- Fixed Y\n- Buffed Z`}/>
-        </div>
+          <div>
+            <div style={{...LABEL_STYLE,marginBottom:6}}>Body / Patch Notes</div>
+            <textarea style={{...inputStyle,minHeight:280,resize:'vertical',lineHeight:1.6}} rows={12}
+              value={form.body||''} onChange={e=>setForm({...form,body:e.target.value})}
+              placeholder={`Write your patch notes here...\n\n## What's Changed\n- Improved X\n- Fixed Y\n- Buffed Z`}/>
+          </div>
 
-        <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:8}}>
-          <button className="btn" onClick={()=>setEditing(null)}>Cancel</button>
-          <button className="btn btn-primary" onClick={save} disabled={!form.title?.trim()}>Save Update</button>
+          <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+            <button className="btn" onClick={()=>setEditing(null)}>Cancel</button>
+            <button className="btn btn-primary" onClick={save} disabled={!form.title?.trim()}>Save Update</button>
+          </div>
         </div>
       </div>
     );
@@ -465,29 +478,28 @@ function PublisherTab() {
     <div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
         <div>
-          <div style={{fontFamily:'var(--display)',fontSize:22,letterSpacing:'.06em',color:'var(--ink)'}}>Game Update Publisher</div>
-          <div style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-faint)',marginTop:3}}>Write, schedule, and publish game updates to your community.</div>
+          <div style={{fontFamily:'var(--display)',fontSize:22,letterSpacing:'.06em',color:'#ffffff'}}>Game Update Publisher</div>
+          <div style={{fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM,marginTop:3}}>Write, schedule, and publish game updates to your community.</div>
         </div>
         <button className="btn btn-primary" onClick={newPost}>+ New Update</button>
       </div>
 
-      {/* Status swimlanes */}
       {UPDATE_STATUSES.map(status => {
         const items = byStatus(status);
         if (status==='Archived' && items.length===0) return null;
         return (
           <div key={status} style={{marginBottom:24}}>
             <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-              <div style={{fontFamily:'var(--display)',fontSize:13,letterSpacing:'.14em',textTransform:'uppercase',color:'var(--ink-faint)'}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(255,255,255,.5)'}}>
                 {status}
               </div>
-              <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)',background:'var(--vellum)',padding:'1px 6px',borderRadius:8}}>
+              <span style={{fontFamily:'var(--mono)',fontSize:10,color:'rgba(255,255,255,.35)',background:'rgba(255,255,255,.06)',padding:'1px 8px',borderRadius:8}}>
                 {items.length}
               </span>
             </div>
 
             {items.length===0 ? (
-              <div style={{padding:'12px 16px',border:'1px dashed var(--rule)',borderRadius:'var(--r-md)',fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-faint)'}}>
+              <div style={{padding:'12px 16px',border:'1px dashed rgba(255,255,255,.10)',borderRadius:8,fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM}}>
                 No {status.toLowerCase()} updates.
               </div>
             ) : (
@@ -496,33 +508,36 @@ function PublisherTab() {
                   const ti = typeInfo(p.type);
                   return (
                     <div key={p.id} style={{
-                      background:'var(--parchment-2)',border:'1px solid var(--rule)',
-                      borderLeft:`3px solid ${ti.color}`,borderRadius:'var(--r-md)',
-                      padding:'14px 16px',display:'grid',gridTemplateColumns:'1fr auto',gap:14,alignItems:'start'
+                      ...PANEL,borderLeft:`3px solid ${ti.color}`,
+                      display:'grid',gridTemplateColumns:'1fr auto',gap:14,alignItems:'start'
                     }}>
                       <div>
-                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5,flexWrap:'wrap'}}>
                           <span style={{fontSize:14}}>{ti.icon}</span>
-                          <span style={{fontFamily:'var(--display)',fontSize:15,letterSpacing:'.04em',color:'var(--ink)'}}>{p.title}</span>
-                          {p.version && <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)',background:'var(--vellum)',padding:'1px 6px',borderRadius:4}}>{p.version}</span>}
-                          <span style={{fontFamily:'var(--body)',fontSize:10,letterSpacing:'.08em',textTransform:'uppercase',color:ti.color}}>{ti.label}</span>
+                          <span style={{fontFamily:'var(--display)',fontSize:15,letterSpacing:'.04em',color:'#ffffff',fontWeight:600}}>{p.title}</span>
+                          {p.version && <span style={{fontFamily:'var(--mono)',fontSize:10,color:'rgba(255,255,255,.45)',background:'rgba(255,255,255,.07)',padding:'1px 7px',borderRadius:4}}>{p.version}</span>}
+                          <span style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'.08em',textTransform:'uppercase',color:ti.color}}>{ti.label}</span>
                         </div>
                         {p.body && (
-                          <div style={{fontFamily:'var(--serif)',fontSize:12,color:'var(--ink-faint)',lineHeight:1.5,
+                          <div style={{fontFamily:'var(--serif)',fontSize:12,color:'rgba(232,240,232,.65)',lineHeight:1.55,
                             overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>
                             {p.body}
                           </div>
                         )}
-                        <div style={{display:'flex',gap:12,marginTop:6,fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)'}}>
+                        <div style={{display:'flex',gap:10,marginTop:6,fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM,flexWrap:'wrap'}}>
                           {p.publishedAt && <span>Published {new Date(p.publishedAt).toLocaleDateString()}</span>}
                           {p.scheduledFor && p.status==='Scheduled' && <span>Scheduled {new Date(p.scheduledFor).toLocaleDateString()}</span>}
                           {p.tags && p.tags.split(',').map(t=>t.trim()).filter(Boolean).map(t=>(
-                            <span key={t} style={{background:'var(--vellum)',padding:'1px 6px',borderRadius:4,color:'var(--ink-dim)'}}>{t}</span>
+                            <span key={t} style={{background:'rgba(255,255,255,.07)',padding:'1px 7px',borderRadius:4,color:'rgba(232,240,232,.5)'}}>{t}</span>
                           ))}
                         </div>
                       </div>
                       <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'flex-end'}}>
-                        {p.status==='Draft' && <button className="btn" style={{fontSize:11,padding:'4px 10px',background:'rgba(74,152,80,.15)',borderColor:'rgba(74,152,80,.4)',color:'#6fcc74'}} onClick={()=>publish(p)}>Publish</button>}
+                        {p.status==='Draft' && (
+                          <button className="btn" style={{fontSize:11,padding:'4px 12px',background:'rgba(74,152,80,.18)',borderColor:'rgba(74,152,80,.4)',color:'#7ee882'}} onClick={()=>publish(p)}>
+                            Publish
+                          </button>
+                        )}
                         <button className="btn" style={{fontSize:11,padding:'4px 10px'}} onClick={()=>editPost(p)}>Edit</button>
                         <button className="btn" style={{fontSize:11,padding:'4px 10px',color:'var(--gold)'}} onClick={()=>deletePost(p.id)}>Delete</button>
                       </div>
@@ -543,26 +558,35 @@ const LiveDataPage = () => {
   const [tab, setTab] = React.useState('stats');
 
   const tabs = [
-    { id:'stats',     label:'Live Stats',        icon:'📡' },
-    { id:'corps',     label:'Corporations',       icon:'🏢' },
-    { id:'nodes',     label:'Nodes',              icon:'🌐' },
-    { id:'livefeed',  label:'Live Updates',       icon:'📰' },
-    { id:'publisher', label:'Update Publisher',   icon:'✍️' },
+    { id:'stats',     label:'Live Stats',      icon:'📡' },
+    { id:'corps',     label:'Corporations',     icon:'🏢' },
+    { id:'nodes',     label:'Nodes',            icon:'🌐' },
+    { id:'livefeed',  label:'Live Updates',     icon:'📰' },
+    { id:'publisher', label:'Update Publisher', icon:'✍️' },
   ];
 
   return (
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="page-title"><span className="ornament">📡</span>Live Data</div>
-          <div className="page-sub">playmythicspellbook.com · real-time</div>
+          <div className="page-title" style={{color:'#ffffff'}}>
+            <span className="ornament">📡</span>Live Data
+          </div>
+          <div className="page-sub" style={{color:'rgba(232,240,232,.55)'}}>playmythicspellbook.com · real-time</div>
         </div>
       </div>
 
-      <div className="tabs" style={{marginBottom:24}}>
+      <div style={{display:'flex',gap:6,marginBottom:24,flexWrap:'wrap'}}>
         {tabs.map(t => (
-          <button key={t.id} className={`tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}>
-            <span style={{marginRight:6}}>{t.icon}</span>{t.label}
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{
+            display:'flex',alignItems:'center',gap:7,padding:'7px 16px',borderRadius:7,cursor:'pointer',
+            fontFamily:'var(--mono)',fontSize:11,letterSpacing:'.10em',textTransform:'uppercase',
+            border: tab===t.id ? '1px solid rgba(255,255,255,.25)' : '1px solid rgba(255,255,255,.08)',
+            background: tab===t.id ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.4)',
+            color: tab===t.id ? '#ffffff' : 'rgba(232,240,232,.5)',
+            backdropFilter:'blur(4px)',transition:'all .15s',
+          }}>
+            <span>{t.icon}</span>{t.label}
           </button>
         ))}
       </div>
