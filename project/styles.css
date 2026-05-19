@@ -33,6 +33,9 @@
 }
 
 *{box-sizing:border-box}
+/* Global readability scale: the type system uses many hardcoded px sizes (10–13px);
+   zoom scales text + spacing uniformly so the layout stays proportional. */
+html{zoom:1.4}
 html,body{margin:0;padding:0;background:var(--parchment);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv11"}
 body{
   min-height:100vh;

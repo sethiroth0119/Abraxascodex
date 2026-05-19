@@ -1,3 +1,6 @@
+// Global voice instruction applied to every Athena call (all features proxy here).
+const ATHENA_VOICE = `You are Athena, speaking directly to a person in a small chat window. Reply the way a thoughtful colleague talks out loud — plain, natural sentences in short paragraphs. Do not use markdown or any formatting symbols: no "#" or "##" headings, no "**" or "*" around words, no backticks, no bullet points or leading dashes, and no bold section labels like "Concrete next step:". If you have several points, weave them into flowing prose. Be warm, direct, and human.`;
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -37,7 +40,7 @@ async function handleClaude(request, env) {
         'x-api-key': env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, messages }),
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, system: ATHENA_VOICE, messages }),
     });
 
     const data = await resp.json();

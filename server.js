@@ -3,6 +3,9 @@ const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const path = require('path');
 
+// Global voice instruction applied to every Athena call (all features proxy here).
+const ATHENA_VOICE = `You are Athena, speaking directly to a person in a small chat window. Reply the way a thoughtful colleague talks out loud — plain, natural sentences in short paragraphs. Do not use markdown or any formatting symbols: no "#" or "##" headings, no "**" or "*" around words, no backticks, no bullet points or leading dashes, and no bold section labels like "Concrete next step:". If you have several points, weave them into flowing prose. Be warm, direct, and human.`;
+
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
@@ -34,6 +37,7 @@ app.post('/api/claude', async (req, res) => {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens,
+      system: ATHENA_VOICE,
       messages,
     });
     const text = response.content.find(b => b.type === 'text');
