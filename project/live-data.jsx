@@ -1,10 +1,12 @@
 // Live Data — pulls from playmythicspellbook.com API
 // Tabs: Live Stats · Corporations · Nodes · Updates · Game Update Publisher
 
-const MS_API = 'https://playmythicspellbook.com/api/v1';
+const MS_API      = 'https://playmythicspellbook.com/api/v1';
+const SB_URL      = 'https://ktsiasyjusesawtrwrjc.supabase.co';
+const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0c2lhc3lqdXNlc2F3dHJ3cmpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDU5MjgsImV4cCI6MjA5NDIyMTkyOH0.fYpQFCs03ZE5AIv88S_GStqp7g71sTQe9yUxmXgyKQo';
 
 const msGet = (p, token) => fetch(MS_API + p, {
-  headers: { accept: 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }
+  headers: { accept: 'application/json', apikey: SB_ANON_KEY, ...(token ? { authorization: 'Bearer ' + token } : {}) }
 }).then(r => r.json()).then(d => {
   if (d && typeof d === 'object' && !Array.isArray(d) && d.error) throw new Error(d.detail || d.error);
   return d;
@@ -12,7 +14,7 @@ const msGet = (p, token) => fetch(MS_API + p, {
 
 const msPost = (p, body, token) => fetch(MS_API + p, {
   method: 'POST',
-  headers: { 'content-type': 'application/json', accept: 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) },
+  headers: { 'content-type': 'application/json', accept: 'application/json', apikey: SB_ANON_KEY, ...(token ? { authorization: 'Bearer ' + token } : {}) },
   body: JSON.stringify(body),
 }).then(r => r.json()).then(d => {
   if (d && typeof d === 'object' && !Array.isArray(d) && (d.error || d.message?.toLowerCase().includes('invalid'))) throw new Error(d.detail || d.error || d.message);
@@ -578,25 +580,13 @@ function PublisherTab() {
 const MS_TOKEN_KEY = 'ms_player_token';
 const MS_USER_KEY  = 'ms_player_user';
 
-// Try to discover Supabase project URL + anon key from the game's HTML
-async function discoverSupabase() {
-  try {
-    const html = await fetch('https://playmythicspellbook.com', { mode: 'cors' }).then(r => r.text());
-    const urlMatch  = html.match(/https:\/\/[a-zA-Z0-9]+\.supabase\.co/);
-    const keyMatch  = html.match(/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{0,}/);
-    return urlMatch ? { url: urlMatch[0], key: keyMatch?.[0] || '' } : null;
-  } catch(e) { return null; }
-}
-
 async function supabaseLogin(email, password) {
-  const sb = await discoverSupabase();
-  if (!sb) throw new Error('Could not discover auth server.');
-  const r = await fetch(`${sb.url}/auth/v1/token?grant_type=password`, {
+  const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'apikey': sb.key },
+    headers: { 'content-type': 'application/json', 'apikey': SB_ANON_KEY },
     body: JSON.stringify({ email, password }),
   }).then(r => r.json());
-  if (r.error || r.error_description) throw new Error(r.error_description || r.error);
+  if (r.error || r.error_description) throw new Error(r.error_description || r.error || 'Login failed');
   return r; // { access_token, user, ... }
 }
 
