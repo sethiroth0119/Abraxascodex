@@ -403,9 +403,9 @@ body[data-sidebar="collapsed"] .you{display:none}
 .btn:hover{border-color:var(--gold-deep);color:var(--gold-bright)}
 .btn-primary{
   background:linear-gradient(180deg, var(--gold), var(--gold-deep));
-  border-color:var(--gold-deep);color:#1a0505;font-weight:600;
+  border-color:var(--gold-deep);color:#ffffff;font-weight:600;
 }
-.btn-primary:hover{filter:brightness(1.08);color:#1a0505}
+.btn-primary:hover{filter:brightness(1.08);color:#ffffff}
 .btn-ghost{background:transparent;border-color:transparent}
 .btn-ghost:hover{background:rgba(184,40,40,.10);border-color:transparent}
 
