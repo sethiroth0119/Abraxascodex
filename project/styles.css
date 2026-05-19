@@ -1,8 +1,8 @@
 /* Mythic Spellbook Studio — survival horror */
 :root{
-  --ink: #f0f0f0;
-  --ink-dim: #a8a8a8;
-  --ink-faint: #606060;
+  --ink: #ffffff;
+  --ink-dim: #d0d0d0;
+  --ink-faint: #909090;
   --parchment: #050505;
   --parchment-2: #0a0a0a;
   --parchment-3: #101010;
