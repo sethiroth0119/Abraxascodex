@@ -624,37 +624,56 @@ function AccountTab() {
     setLoadingData(false);
   }
 
+  const [loginMode, setLoginMode] = React.useState('password'); // 'password' | 'token'
+  const [manualToken, setManualToken] = React.useState('');
+
   async function handleLogin(e) {
     e.preventDefault();
     if (!loginForm.identifier || !loginForm.password) return;
     setLogging(true); setLoginErr('');
-    try {
-      // Try email login first, then username
-      let result;
-      const isEmail = loginForm.identifier.includes('@');
+
+    // All possible auth endpoint + body combinations to try in order
+    const attempts = [
+      ['/auth/login',   { email: loginForm.identifier, password: loginForm.password }],
+      ['/auth/login',   { username: loginForm.identifier, password: loginForm.password }],
+      ['/auth/signin',  { email: loginForm.identifier, password: loginForm.password }],
+      ['/login',        { email: loginForm.identifier, password: loginForm.password }],
+      ['/login',        { username: loginForm.identifier, password: loginForm.password }],
+      ['/users/login',  { email: loginForm.identifier, password: loginForm.password }],
+      ['/players/login',{ email: loginForm.identifier, password: loginForm.password }],
+      ['/auth/token',   { email: loginForm.identifier, password: loginForm.password, grant_type: 'password' }],
+    ];
+
+    let lastErr = 'Login failed — the API may use a different auth method. Try pasting your token manually below.';
+    for (const [path, body] of attempts) {
       try {
-        result = isEmail
-          ? await MythicSpellbook.loginEmail(loginForm.identifier, loginForm.password)
-          : await MythicSpellbook.login(loginForm.identifier, loginForm.password);
-      } catch(e1) {
-        // Try the other way
-        result = isEmail
-          ? await MythicSpellbook.login(loginForm.identifier, loginForm.password)
-          : await MythicSpellbook.loginEmail(loginForm.identifier, loginForm.password);
+        const result = await msPost(path, body);
+        const tok = result?.token || result?.access_token || result?.jwt
+          || result?.data?.token || result?.data?.access_token
+          || result?.session?.access_token;
+        if (tok) {
+          localStorage.setItem(MS_TOKEN_KEY, tok);
+          setToken(tok);
+          const u = result?.user || result?.player || result?.profile || result?.data;
+          if (u && typeof u === 'object') { setSavedUser(u); localStorage.setItem(MS_USER_KEY, JSON.stringify(u)); }
+          setLogging(false);
+          return;
+        }
+      } catch(e) {
+        lastErr = e.message || lastErr;
+        // keep trying
       }
-      const tok = result?.token || result?.access_token || result?.jwt || result?.data?.token;
-      if (!tok) throw new Error('No token returned. Check your credentials.');
-      localStorage.setItem(MS_TOKEN_KEY, tok);
-      setToken(tok);
-      if (result?.user || result?.player || result?.data) {
-        const u = result.user || result.player || result.data;
-        setSavedUser(u);
-        localStorage.setItem(MS_USER_KEY, JSON.stringify(u));
-      }
-    } catch(e) {
-      setLoginErr(e.message || 'Login failed. Check your username/password.');
     }
+    setLoginErr(lastErr);
     setLogging(false);
+  }
+
+  function handleManualToken(e) {
+    e.preventDefault();
+    const tok = manualToken.trim();
+    if (!tok) return;
+    localStorage.setItem(MS_TOKEN_KEY, tok);
+    setToken(tok);
   }
 
   function handleLogout() {
@@ -673,8 +692,8 @@ function AccountTab() {
   if (!isLoggedIn) {
     return (
       <div style={{display:'flex',justifyContent:'center',paddingTop:40}}>
-        <div style={{...PANEL,width:'100%',maxWidth:420}}>
-          <div style={{textAlign:'center',marginBottom:28}}>
+        <div style={{...PANEL,width:'100%',maxWidth:440}}>
+          <div style={{textAlign:'center',marginBottom:24}}>
             <div style={{fontSize:36,marginBottom:10}}>🧙</div>
             <div style={{fontFamily:'var(--display)',fontSize:22,letterSpacing:'.06em',color:'#ffffff',marginBottom:6}}>
               Mythic Spellbook Account
@@ -684,33 +703,76 @@ function AccountTab() {
             </div>
           </div>
 
-          <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
-            <div>
-              <div style={{...LABEL_STYLE,marginBottom:6}}>Username or Email</div>
-              <input style={inputStyle} placeholder="your@email.com or username"
-                value={loginForm.identifier} onChange={e=>setLoginForm({...loginForm,identifier:e.target.value})}
-                autoComplete="username" />
-            </div>
-            <div>
-              <div style={{...LABEL_STYLE,marginBottom:6}}>Password</div>
-              <input style={inputStyle} type="password" placeholder="••••••••"
-                value={loginForm.password} onChange={e=>setLoginForm({...loginForm,password:e.target.value})}
-                autoComplete="current-password" />
-            </div>
+          {/* Mode tabs */}
+          <div style={{display:'flex',gap:4,marginBottom:20,background:'rgba(0,0,0,.3)',borderRadius:8,padding:4}}>
+            {[['password','🔑 Password'],['token','📋 Paste Token']].map(([m,lbl])=>(
+              <button key={m} onClick={()=>{setLoginMode(m);setLoginErr('');}} style={{
+                flex:1,padding:'7px',borderRadius:6,border:'none',cursor:'pointer',
+                fontFamily:'var(--mono)',fontSize:11,letterSpacing:'.08em',
+                background: loginMode===m ? 'rgba(255,255,255,.12)' : 'transparent',
+                color: loginMode===m ? '#ffffff' : 'rgba(255,255,255,.45)',
+              }}>{lbl}</button>
+            ))}
+          </div>
 
-            {loginErr && (
-              <div style={{padding:'10px 14px',background:'rgba(180,30,30,.15)',border:'1px solid rgba(200,60,60,.3)',borderRadius:7,fontFamily:'var(--mono)',fontSize:12,color:'#f08080'}}>
-                ⚠ {loginErr}
+          {loginMode === 'password' ? (
+            <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
+              <div>
+                <div style={{...LABEL_STYLE,marginBottom:6}}>Username or Email</div>
+                <input style={inputStyle} placeholder="your@email.com or username"
+                  value={loginForm.identifier} onChange={e=>setLoginForm({...loginForm,identifier:e.target.value})}
+                  autoComplete="username" />
               </div>
-            )}
+              <div>
+                <div style={{...LABEL_STYLE,marginBottom:6}}>Password</div>
+                <input style={inputStyle} type="password" placeholder="••••••••"
+                  value={loginForm.password} onChange={e=>setLoginForm({...loginForm,password:e.target.value})}
+                  autoComplete="current-password" />
+              </div>
 
-            <button type="submit" disabled={logging || !loginForm.identifier || !loginForm.password}
-              style={{background:'var(--gold)',border:'none',borderRadius:7,padding:'11px',color:'#fff',
-                fontFamily:'var(--mono)',fontSize:12,letterSpacing:'.12em',textTransform:'uppercase',
-                cursor:logging?'wait':'pointer',opacity:logging?.6:1,marginTop:4}}>
-              {logging ? 'Connecting…' : 'Log In'}
-            </button>
-          </form>
+              {loginErr && (
+                <div style={{padding:'10px 14px',background:'rgba(180,30,30,.15)',border:'1px solid rgba(200,60,60,.3)',borderRadius:7,fontFamily:'var(--mono)',fontSize:11,color:'#f08080',lineHeight:1.5}}>
+                  ⚠ {loginErr}
+                  {loginErr.includes('API') && (
+                    <div style={{marginTop:6,color:'rgba(240,240,240,.6)'}}>
+                      Try the <b style={{color:'#fff',cursor:'pointer'}} onClick={()=>setLoginMode('token')}>Paste Token</b> tab instead.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button type="submit" disabled={logging || !loginForm.identifier || !loginForm.password}
+                style={{background:'var(--gold)',border:'none',borderRadius:7,padding:'11px',color:'#fff',
+                  fontFamily:'var(--mono)',fontSize:12,letterSpacing:'.12em',textTransform:'uppercase',
+                  cursor:logging?'wait':'pointer',opacity:(logging||!loginForm.identifier||!loginForm.password)?.6:1,marginTop:4}}>
+                {logging ? 'Trying endpoints…' : 'Log In'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleManualToken} style={{display:'flex',flexDirection:'column',gap:14}}>
+              <div>
+                <div style={{...LABEL_STYLE,marginBottom:6}}>Bearer Token / API Key</div>
+                <textarea style={{...inputStyle,minHeight:90,resize:'vertical',fontFamily:'var(--mono)',fontSize:11,lineHeight:1.5}}
+                  placeholder="Paste your access token or API key here…"
+                  value={manualToken} onChange={e=>setManualToken(e.target.value)} />
+              </div>
+              <div style={{padding:'10px 14px',background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:7,fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM,lineHeight:1.6}}>
+                💡 Get your token from the game:<br/>
+                Open <b style={{color:'#fff'}}>playmythicspellbook.com</b> → open browser DevTools (F12) → Application → Local Storage or Cookies → copy your <code style={{background:'rgba(255,255,255,.08)',padding:'1px 5px',borderRadius:3}}>access_token</code>
+              </div>
+              {loginErr && (
+                <div style={{padding:'10px 14px',background:'rgba(180,30,30,.15)',border:'1px solid rgba(200,60,60,.3)',borderRadius:7,fontFamily:'var(--mono)',fontSize:11,color:'#f08080'}}>
+                  ⚠ {loginErr}
+                </div>
+              )}
+              <button type="submit" disabled={!manualToken.trim()}
+                style={{background:'var(--gold)',border:'none',borderRadius:7,padding:'11px',color:'#fff',
+                  fontFamily:'var(--mono)',fontSize:12,letterSpacing:'.12em',textTransform:'uppercase',
+                  cursor:!manualToken.trim()?'default':'pointer',opacity:!manualToken.trim()?.6:1}}>
+                Connect with Token
+              </button>
+            </form>
+          )}
 
           <div style={{marginTop:20,paddingTop:16,borderTop:'1px solid rgba(255,255,255,.08)',textAlign:'center'}}>
             <div style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM,marginBottom:8}}>Don't have an account?</div>
