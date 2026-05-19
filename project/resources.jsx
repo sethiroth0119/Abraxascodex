@@ -23,8 +23,8 @@ const RESOURCE_TIERS = [
   { id:'4', name:'Tier 4 · Legendary',  color:'#cc2a3a' },
 ];
 
-// Default seed — full canonical resource set from the design doc
-window.RESOURCES = window.RESOURCES || [
+// Canonical resource list — merges into saved data so new additions always appear
+const _CANONICAL_RESOURCES = [
   // CORE SURVIVAL
   { id:'food',                  name:'Food',                  icon:'🍞', category:'core',   tier:'1', purpose:'Feeds survivors, prevents morale loss, supports camp growth' },
   { id:'food-supplies',         name:'Food Supplies',         icon:'🥫', category:'core',   tier:'1', purpose:'Preserved stockpiles for extended operations and siege scenarios' },
@@ -214,6 +214,17 @@ window.RESOURCES = window.RESOURCES || [
   { id:'ritual-candles',        name:'Ritual Candles',        icon:'🕯', category:'event',  tier:'2', purpose:'Required in summoning and ritual systems during event phases' },
 ];
 
+// Merge canonical into saved — any new id not already stored gets added automatically
+(function() {
+  const existing = window.RESOURCES;
+  if (!existing || existing.length === 0) {
+    window.RESOURCES = _CANONICAL_RESOURCES;
+  } else {
+    const savedIds = new Set(existing.map(r => r.id));
+    const fresh = _CANONICAL_RESOURCES.filter(r => !savedIds.has(r.id));
+    if (fresh.length > 0) window.RESOURCES = [...existing, ...fresh];
+  }
+})();
 
 const ResourcesPage = () => {
   const [resources, setResources] = window.useEntities ? window.useEntities('resources') : React.useState(window.RESOURCES);
