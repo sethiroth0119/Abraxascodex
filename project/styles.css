@@ -120,7 +120,7 @@ body[data-sidebar="collapsed"] .app{grid-template-columns:64px 1fr}
   background:conic-gradient(from 0deg, transparent, rgba(0,0,0,.6), transparent 40%);
   mix-blend-mode:multiply;
 }
-.brand-text{font-family:var(--display);letter-spacing:.16em;font-size:13px;color:var(--gold-bright);text-transform:uppercase}
+.brand-text{font-family:var(--display);letter-spacing:.16em;font-size:13px;color:#ffffff;text-transform:uppercase}
 .brand-text small{display:block;font-family:var(--body);font-size:10px;letter-spacing:.22em;color:var(--ink-faint);margin-top:2px}
 body[data-sidebar="collapsed"] .brand-text{display:none}
 
