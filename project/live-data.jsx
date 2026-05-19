@@ -578,6 +578,28 @@ function PublisherTab() {
 const MS_TOKEN_KEY = 'ms_player_token';
 const MS_USER_KEY  = 'ms_player_user';
 
+// Try to discover Supabase project URL + anon key from the game's HTML
+async function discoverSupabase() {
+  try {
+    const html = await fetch('https://playmythicspellbook.com', { mode: 'cors' }).then(r => r.text());
+    const urlMatch  = html.match(/https:\/\/[a-zA-Z0-9]+\.supabase\.co/);
+    const keyMatch  = html.match(/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{0,}/);
+    return urlMatch ? { url: urlMatch[0], key: keyMatch?.[0] || '' } : null;
+  } catch(e) { return null; }
+}
+
+async function supabaseLogin(email, password) {
+  const sb = await discoverSupabase();
+  if (!sb) throw new Error('Could not discover auth server.');
+  const r = await fetch(`${sb.url}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'apikey': sb.key },
+    body: JSON.stringify({ email, password }),
+  }).then(r => r.json());
+  if (r.error || r.error_description) throw new Error(r.error_description || r.error);
+  return r; // { access_token, user, ... }
+}
+
 function AccountTab() {
   const [token,    setToken]    = React.useState(() => localStorage.getItem(MS_TOKEN_KEY) || '');
   const [savedUser,setSavedUser]= React.useState(() => { try { return JSON.parse(localStorage.getItem(MS_USER_KEY)||'null'); } catch(e){ return null; } });
@@ -624,47 +646,25 @@ function AccountTab() {
     setLoadingData(false);
   }
 
-  const [loginMode, setLoginMode] = React.useState('password'); // 'password' | 'token'
+  const [loginMode, setLoginMode] = React.useState('password');
   const [manualToken, setManualToken] = React.useState('');
 
   async function handleLogin(e) {
     e.preventDefault();
     if (!loginForm.identifier || !loginForm.password) return;
     setLogging(true); setLoginErr('');
-
-    // All possible auth endpoint + body combinations to try in order
-    const attempts = [
-      ['/auth/login',   { email: loginForm.identifier, password: loginForm.password }],
-      ['/auth/login',   { username: loginForm.identifier, password: loginForm.password }],
-      ['/auth/signin',  { email: loginForm.identifier, password: loginForm.password }],
-      ['/login',        { email: loginForm.identifier, password: loginForm.password }],
-      ['/login',        { username: loginForm.identifier, password: loginForm.password }],
-      ['/users/login',  { email: loginForm.identifier, password: loginForm.password }],
-      ['/players/login',{ email: loginForm.identifier, password: loginForm.password }],
-      ['/auth/token',   { email: loginForm.identifier, password: loginForm.password, grant_type: 'password' }],
-    ];
-
-    let lastErr = 'Login failed — the API may use a different auth method. Try pasting your token manually below.';
-    for (const [path, body] of attempts) {
-      try {
-        const result = await msPost(path, body);
-        const tok = result?.token || result?.access_token || result?.jwt
-          || result?.data?.token || result?.data?.access_token
-          || result?.session?.access_token;
-        if (tok) {
-          localStorage.setItem(MS_TOKEN_KEY, tok);
-          setToken(tok);
-          const u = result?.user || result?.player || result?.profile || result?.data;
-          if (u && typeof u === 'object') { setSavedUser(u); localStorage.setItem(MS_USER_KEY, JSON.stringify(u)); }
-          setLogging(false);
-          return;
-        }
-      } catch(e) {
-        lastErr = e.message || lastErr;
-        // keep trying
-      }
+    try {
+      // Use Supabase auth discovered from the game's own page
+      const result = await supabaseLogin(loginForm.identifier, loginForm.password);
+      const tok = result?.access_token || result?.token || result?.session?.access_token;
+      if (!tok) throw new Error('No token returned. Try the Paste Token tab instead.');
+      localStorage.setItem(MS_TOKEN_KEY, tok);
+      setToken(tok);
+      const u = result?.user || result?.player;
+      if (u) { setSavedUser(u); localStorage.setItem(MS_USER_KEY, JSON.stringify(u)); }
+    } catch(e) {
+      setLoginErr((e.message || 'Login failed.') + ' — or use the Paste Token tab.');
     }
-    setLoginErr(lastErr);
     setLogging(false);
   }
 
@@ -705,7 +705,7 @@ function AccountTab() {
 
           {/* Mode tabs */}
           <div style={{display:'flex',gap:4,marginBottom:20,background:'rgba(0,0,0,.3)',borderRadius:8,padding:4}}>
-            {[['password','🔑 Password'],['token','📋 Paste Token']].map(([m,lbl])=>(
+            {[['password','🔑 Email & Password'],['token','📋 Paste Token']].map(([m,lbl])=>(
               <button key={m} onClick={()=>{setLoginMode(m);setLoginErr('');}} style={{
                 flex:1,padding:'7px',borderRadius:6,border:'none',cursor:'pointer',
                 fontFamily:'var(--mono)',fontSize:11,letterSpacing:'.08em',
@@ -745,7 +745,7 @@ function AccountTab() {
                 style={{background:'var(--gold)',border:'none',borderRadius:7,padding:'11px',color:'#fff',
                   fontFamily:'var(--mono)',fontSize:12,letterSpacing:'.12em',textTransform:'uppercase',
                   cursor:logging?'wait':'pointer',opacity:(logging||!loginForm.identifier||!loginForm.password)?.6:1,marginTop:4}}>
-                {logging ? 'Trying endpoints…' : 'Log In'}
+                {logging ? 'Signing in…' : 'Log In'}
               </button>
             </form>
           ) : (
