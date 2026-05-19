@@ -166,7 +166,7 @@ body[data-sidebar="collapsed"] .you{display:none}
 }
 .crumbs{display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:15px;letter-spacing:.04em}
 .crumbs .sep{color:var(--ink-faint);font-size:11px}
-.crumbs .root{color:var(--gold)}
+.crumbs .root{color:#ffffff}
 .crumbs .leaf{color:var(--ink)}
 .search{
   margin-left:auto;display:flex;align-items:center;gap:8px;padding:6px 12px;
