@@ -2,19 +2,39 @@
 // Tabs: Live Stats · Corporations · Nodes · Updates · Game Update Publisher
 
 const MS_API = 'https://playmythicspellbook.com/api/v1';
-const msGet = p => fetch(MS_API + p, { headers: { accept: 'application/json' } }).then(r => r.json()).then(d => {
-  // Detect upstream error shape {error: ..., detail: ...}
+
+const msGet = (p, token) => fetch(MS_API + p, {
+  headers: { accept: 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }
+}).then(r => r.json()).then(d => {
   if (d && typeof d === 'object' && !Array.isArray(d) && d.error) throw new Error(d.detail || d.error);
   return d;
 });
 
+const msPost = (p, body, token) => fetch(MS_API + p, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json', accept: 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) },
+  body: JSON.stringify(body),
+}).then(r => r.json()).then(d => {
+  if (d && typeof d === 'object' && !Array.isArray(d) && (d.error || d.message?.toLowerCase().includes('invalid'))) throw new Error(d.detail || d.error || d.message);
+  return d;
+});
+
 const MythicSpellbook = {
-  health:       ()      => msGet('/health'),
-  corporations: (n=200) => msGet('/corporations?limit=' + n),
-  reserve:      ()      => msGet('/reserve'),
-  tax:          ()      => msGet('/tax'),
-  nodes:        (n=300) => msGet('/nodes?limit=' + n),
-  updates:      (n=50)  => msGet('/updates?limit=' + n),
+  health:       ()           => msGet('/health'),
+  corporations: (n=200)      => msGet('/corporations?limit=' + n),
+  reserve:      ()           => msGet('/reserve'),
+  tax:          ()           => msGet('/tax'),
+  nodes:        (n=300)      => msGet('/nodes?limit=' + n),
+  updates:      (n=50)       => msGet('/updates?limit=' + n),
+  login:        (u, p)       => msPost('/auth/login', { username: u, password: p }),
+  loginEmail:   (e, p)       => msPost('/auth/login', { email: e, password: p }),
+  me:           (tok)        => msGet('/me', tok),
+  myDeck:       (tok)        => msGet('/me/deck', tok),
+  myStats:      (tok)        => msGet('/me/stats', tok),
+  myCards:      (tok)        => msGet('/me/cards', tok),
+  myInventory:  (tok)        => msGet('/me/inventory', tok),
+  player:       (id, tok)    => msGet('/players/' + id, tok),
+  playerDeck:   (id, tok)    => msGet('/players/' + id + '/deck', tok),
 };
 
 // ── shared styles ─────────────────────────────────────────────────────────────
@@ -554,11 +574,342 @@ function PublisherTab() {
   );
 }
 
+// ── Tab: My Account ──────────────────────────────────────────────────────────
+const MS_TOKEN_KEY = 'ms_player_token';
+const MS_USER_KEY  = 'ms_player_user';
+
+function AccountTab() {
+  const [token,    setToken]    = React.useState(() => localStorage.getItem(MS_TOKEN_KEY) || '');
+  const [savedUser,setSavedUser]= React.useState(() => { try { return JSON.parse(localStorage.getItem(MS_USER_KEY)||'null'); } catch(e){ return null; } });
+
+  const [loginForm, setLoginForm] = React.useState({ identifier: '', password: '' });
+  const [loginErr,  setLoginErr]  = React.useState('');
+  const [logging,   setLogging]   = React.useState(false);
+
+  const [profile,   setProfile]   = React.useState(null);
+  const [deck,      setDeck]      = React.useState(null);
+  const [stats,     setStats]     = React.useState(null);
+  const [inventory, setInventory] = React.useState(null);
+  const [loadingData, setLoadingData] = React.useState(false);
+  const [dataErr,   setDataErr]   = React.useState('');
+  const [activeSection, setActiveSection] = React.useState('profile');
+
+  const isLoggedIn = !!token;
+
+  // Auto-fetch data when token is present
+  React.useEffect(() => {
+    if (!token) return;
+    fetchPlayerData(token);
+  }, [token]);
+
+  async function fetchPlayerData(tok) {
+    setLoadingData(true); setDataErr('');
+    try {
+      // Try multiple endpoint patterns in parallel, use whatever succeeds
+      const results = await Promise.allSettled([
+        MythicSpellbook.me(tok),
+        MythicSpellbook.myDeck(tok),
+        MythicSpellbook.myStats(tok),
+        MythicSpellbook.myInventory(tok),
+      ]);
+      const [pRes, dRes, sRes, iRes] = results;
+      if (pRes.status === 'fulfilled') { setProfile(pRes.value); if (!savedUser) { setSavedUser(pRes.value); localStorage.setItem(MS_USER_KEY, JSON.stringify(pRes.value)); } }
+      if (dRes.status === 'fulfilled') setDeck(dRes.value);
+      if (sRes.status === 'fulfilled') setStats(sRes.value);
+      if (iRes.status === 'fulfilled') setInventory(iRes.value);
+      if (pRes.status === 'rejected' && dRes.status === 'rejected') setDataErr('Could not load player data. The API may not support these endpoints yet.');
+    } catch(e) {
+      setDataErr(e.message || 'Failed to load player data.');
+    }
+    setLoadingData(false);
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    if (!loginForm.identifier || !loginForm.password) return;
+    setLogging(true); setLoginErr('');
+    try {
+      // Try email login first, then username
+      let result;
+      const isEmail = loginForm.identifier.includes('@');
+      try {
+        result = isEmail
+          ? await MythicSpellbook.loginEmail(loginForm.identifier, loginForm.password)
+          : await MythicSpellbook.login(loginForm.identifier, loginForm.password);
+      } catch(e1) {
+        // Try the other way
+        result = isEmail
+          ? await MythicSpellbook.login(loginForm.identifier, loginForm.password)
+          : await MythicSpellbook.loginEmail(loginForm.identifier, loginForm.password);
+      }
+      const tok = result?.token || result?.access_token || result?.jwt || result?.data?.token;
+      if (!tok) throw new Error('No token returned. Check your credentials.');
+      localStorage.setItem(MS_TOKEN_KEY, tok);
+      setToken(tok);
+      if (result?.user || result?.player || result?.data) {
+        const u = result.user || result.player || result.data;
+        setSavedUser(u);
+        localStorage.setItem(MS_USER_KEY, JSON.stringify(u));
+      }
+    } catch(e) {
+      setLoginErr(e.message || 'Login failed. Check your username/password.');
+    }
+    setLogging(false);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem(MS_TOKEN_KEY);
+    localStorage.removeItem(MS_USER_KEY);
+    setToken(''); setSavedUser(null); setProfile(null); setDeck(null); setStats(null); setInventory(null);
+  }
+
+  const inputStyle = {
+    background:'rgba(0,0,0,.55)', color:'#ffffff', border:'1px solid rgba(255,255,255,.18)',
+    borderRadius:7, padding:'10px 14px', width:'100%', fontFamily:'var(--body)', fontSize:14,
+    outline:'none', boxSizing:'border-box',
+  };
+
+  // ── Not logged in ─────────────────────────────────────────────────────────
+  if (!isLoggedIn) {
+    return (
+      <div style={{display:'flex',justifyContent:'center',paddingTop:40}}>
+        <div style={{...PANEL,width:'100%',maxWidth:420}}>
+          <div style={{textAlign:'center',marginBottom:28}}>
+            <div style={{fontSize:36,marginBottom:10}}>🧙</div>
+            <div style={{fontFamily:'var(--display)',fontSize:22,letterSpacing:'.06em',color:'#ffffff',marginBottom:6}}>
+              Mythic Spellbook Account
+            </div>
+            <div style={{fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM}}>
+              Log in to view your deck, stats, and player profile
+            </div>
+          </div>
+
+          <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
+            <div>
+              <div style={{...LABEL_STYLE,marginBottom:6}}>Username or Email</div>
+              <input style={inputStyle} placeholder="your@email.com or username"
+                value={loginForm.identifier} onChange={e=>setLoginForm({...loginForm,identifier:e.target.value})}
+                autoComplete="username" />
+            </div>
+            <div>
+              <div style={{...LABEL_STYLE,marginBottom:6}}>Password</div>
+              <input style={inputStyle} type="password" placeholder="••••••••"
+                value={loginForm.password} onChange={e=>setLoginForm({...loginForm,password:e.target.value})}
+                autoComplete="current-password" />
+            </div>
+
+            {loginErr && (
+              <div style={{padding:'10px 14px',background:'rgba(180,30,30,.15)',border:'1px solid rgba(200,60,60,.3)',borderRadius:7,fontFamily:'var(--mono)',fontSize:12,color:'#f08080'}}>
+                ⚠ {loginErr}
+              </div>
+            )}
+
+            <button type="submit" disabled={logging || !loginForm.identifier || !loginForm.password}
+              style={{background:'var(--gold)',border:'none',borderRadius:7,padding:'11px',color:'#fff',
+                fontFamily:'var(--mono)',fontSize:12,letterSpacing:'.12em',textTransform:'uppercase',
+                cursor:logging?'wait':'pointer',opacity:logging?.6:1,marginTop:4}}>
+              {logging ? 'Connecting…' : 'Log In'}
+            </button>
+          </form>
+
+          <div style={{marginTop:20,paddingTop:16,borderTop:'1px solid rgba(255,255,255,.08)',textAlign:'center'}}>
+            <div style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM,marginBottom:8}}>Don't have an account?</div>
+            <a href="https://playmythicspellbook.com" target="_blank" rel="noopener"
+              style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--gold)',textDecoration:'none',letterSpacing:'.08em'}}>
+              Play Mythic Spellbook →
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Logged in ─────────────────────────────────────────────────────────────
+  const displayUser = profile || savedUser || {};
+  const username = displayUser.username || displayUser.name || displayUser.display_name || displayUser.email || 'Player';
+  const avatar   = displayUser.avatar || displayUser.avatar_url || displayUser.profile_image;
+  const level    = displayUser.level || displayUser.rank;
+  const faction  = displayUser.faction || displayUser.guild || displayUser.team;
+
+  const sections = [
+    { id:'profile',   label:'Profile',   icon:'👤' },
+    { id:'stats',     label:'Stats',     icon:'📊' },
+    { id:'deck',      label:'Deck',      icon:'🃏' },
+    { id:'inventory', label:'Inventory', icon:'🎒' },
+  ];
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{...PANEL,display:'flex',alignItems:'center',gap:16,marginBottom:16}}>
+        <div style={{width:52,height:52,borderRadius:'50%',background:'linear-gradient(135deg,var(--gold-deep),var(--gold))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0,overflow:'hidden'}}>
+          {avatar ? <img src={avatar} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none'}} /> : '🧙'}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontFamily:'var(--display)',fontSize:20,letterSpacing:'.06em',color:'#ffffff',fontWeight:600}}>{username}</div>
+          <div style={{display:'flex',gap:10,marginTop:4,flexWrap:'wrap'}}>
+            {level    && <span style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM}}>Level {level}</span>}
+            {faction  && <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--gold)'}}>◆ {faction}</span>}
+            {displayUser.email && <span style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM}}>{displayUser.email}</span>}
+          </div>
+        </div>
+        <div style={{display:'flex',gap:8'}}>
+          <button className="btn" style={{fontSize:11}} onClick={()=>fetchPlayerData(token)}>↻ Refresh</button>
+          <button className="btn" style={{fontSize:11,color:'var(--gold)'}} onClick={handleLogout}>Log Out</button>
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
+        {sections.map(s => (
+          <button key={s.id} onClick={()=>setActiveSection(s.id)} style={{
+            display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:6,cursor:'pointer',
+            fontFamily:'var(--mono)',fontSize:11,letterSpacing:'.10em',textTransform:'uppercase',
+            border: activeSection===s.id ? '1px solid rgba(255,255,255,.25)' : '1px solid rgba(255,255,255,.08)',
+            background: activeSection===s.id ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.4)',
+            color: activeSection===s.id ? '#ffffff' : 'rgba(255,255,255,.5)',
+          }}>
+            <span>{s.icon}</span>{s.label}
+          </button>
+        ))}
+      </div>
+
+      {loadingData && <div style={{padding:40,textAlign:'center'}}><Spinner/></div>}
+      {dataErr && !loadingData && <ErrorBox msg={dataErr}/>}
+
+      {/* Profile */}
+      {!loadingData && activeSection==='profile' && (
+        <div style={PANEL}>
+          <div style={SECTION_HEAD}>Player Profile</div>
+          {!profile ? (
+            <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:12}}>Profile data not available from API.</div>
+          ) : (
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:10}}>
+              {Object.entries(profile).filter(([k,v])=>v!=null&&typeof v!=='object').map(([k,v])=>(
+                <div key={k} style={{background:'rgba(0,0,0,.35)',border:'1px solid rgba(255,255,255,.08)',borderRadius:7,padding:'10px 14px'}}>
+                  <div style={{...LABEL_STYLE,marginBottom:4}}>{k.replace(/_/g,' ')}</div>
+                  <div style={{fontFamily:'var(--mono)',fontSize:13,color:'#ffffff',fontWeight:500,wordBreak:'break-all'}}>{String(v)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Stats */}
+      {!loadingData && activeSection==='stats' && (
+        <div style={PANEL}>
+          <div style={SECTION_HEAD}>Player Stats</div>
+          {!stats ? (
+            <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:12}}>Stats not available from API.</div>
+          ) : (
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:10}}>
+              {Object.entries(stats).filter(([k,v])=>v!=null&&typeof v!=='object').map(([k,v])=>(
+                <div key={k} style={{background:'rgba(0,0,0,.35)',border:'1px solid rgba(255,255,255,.08)',borderRadius:7,padding:'14px 16px',textAlign:'center'}}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:22,color: typeof v==='number'?'var(--gold-bright)':'#ffffff',fontWeight:700,marginBottom:4}}>
+                    {typeof v==='number' ? fmt(v) : String(v)}
+                  </div>
+                  <div style={{...LABEL_STYLE,marginBottom:0}}>{k.replace(/_/g,' ')}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Deck */}
+      {!loadingData && activeSection==='deck' && (
+        <div style={PANEL}>
+          <div style={SECTION_HEAD}>Your Deck</div>
+          {!deck ? (
+            <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:12}}>Deck data not available from API.</div>
+          ) : (() => {
+            const cards = Array.isArray(deck) ? deck : (deck.cards || deck.deck || deck.data || []);
+            const deckMeta = !Array.isArray(deck) ? deck : null;
+            return (
+              <div>
+                {deckMeta && (
+                  <div style={{display:'flex',gap:16,marginBottom:16,flexWrap:'wrap'}}>
+                    {Object.entries(deckMeta).filter(([k,v])=>k!=='cards'&&k!=='deck'&&k!=='data'&&v!=null&&typeof v!=='object').map(([k,v])=>(
+                      <div key={k} style={{fontFamily:'var(--mono)',fontSize:11,...TEXT_DIM}}>
+                        <span style={{marginRight:6}}>{k.replace(/_/g,' ')}:</span>
+                        <span style={{color:'#ffffff'}}>{String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {cards.length === 0 ? (
+                  <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:12}}>No cards in deck.</div>
+                ) : (
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}}>
+                    {cards.map((card,i) => {
+                      const name = card.name || card.card_name || card.title || `Card ${i+1}`;
+                      const qty  = card.quantity || card.count || card.copies || 1;
+                      const el   = card.element || card.type || card.class || '';
+                      const cost = card.cost || card.mana_cost || card.mana;
+                      const rarity = card.rarity || '';
+                      return (
+                        <div key={card.id||i} style={{background:'rgba(0,0,0,.4)',border:'1px solid rgba(255,255,255,.10)',borderRadius:8,padding:'12px 14px',position:'relative'}}>
+                          {qty > 1 && (
+                            <div style={{position:'absolute',top:8,right:10,fontFamily:'var(--mono)',fontSize:11,color:'var(--gold)',fontWeight:700}}>×{qty}</div>
+                          )}
+                          <div style={{fontFamily:'var(--display)',fontSize:13,letterSpacing:'.04em',color:'#ffffff',marginBottom:4,paddingRight:24}}>{name}</div>
+                          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                            {el     && <span style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM}}>{el}</span>}
+                            {cost   != null && <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--gold-bright)'}}>◆ {cost}</span>}
+                            {rarity && <span style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM,textTransform:'capitalize'}}>{rarity}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Inventory */}
+      {!loadingData && activeSection==='inventory' && (
+        <div style={PANEL}>
+          <div style={SECTION_HEAD}>Inventory</div>
+          {!inventory ? (
+            <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:12}}>Inventory not available from API.</div>
+          ) : (() => {
+            const items = Array.isArray(inventory) ? inventory : (inventory.items || inventory.resources || inventory.data || []);
+            if (items.length === 0) return <div style={{...TEXT_DIM,fontFamily:'var(--mono)',fontSize:12}}>Inventory is empty.</div>;
+            return (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:8}}>
+                {items.map((item,i) => {
+                  const name = item.name || item.item_name || item.resource || `Item ${i+1}`;
+                  const qty  = item.quantity || item.amount || item.count || 1;
+                  const type = item.type || item.category || '';
+                  return (
+                    <div key={item.id||i} style={{background:'rgba(0,0,0,.35)',border:'1px solid rgba(255,255,255,.08)',borderRadius:7,padding:'10px 13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <div>
+                        <div style={{fontFamily:'var(--body)',fontSize:13,color:'#ffffff',marginBottom:2}}>{name}</div>
+                        {type && <div style={{fontFamily:'var(--mono)',fontSize:10,...TEXT_DIM}}>{type}</div>}
+                      </div>
+                      <div style={{fontFamily:'var(--mono)',fontSize:15,color:'var(--gold-bright)',fontWeight:700,flexShrink:0,marginLeft:8}}>{fmt(qty)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main LiveDataPage ─────────────────────────────────────────────────────────
 const LiveDataPage = () => {
-  const [tab, setTab] = React.useState('stats');
+  const [tab, setTab] = React.useState('account');
 
   const tabs = [
+    { id:'account',   label:'My Account',      icon:'🧙' },
     { id:'stats',     label:'Live Stats',      icon:'📡' },
     { id:'corps',     label:'Corporations',     icon:'🏢' },
     { id:'nodes',     label:'Nodes',            icon:'🌐' },
@@ -592,6 +943,7 @@ const LiveDataPage = () => {
         ))}
       </div>
 
+      {tab==='account'   && <AccountTab/>}
       {tab==='stats'     && <StatsTab/>}
       {tab==='corps'     && <CorporationsTab/>}
       {tab==='nodes'     && <NodesTab/>}
