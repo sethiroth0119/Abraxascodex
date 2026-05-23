@@ -622,9 +622,16 @@ body[data-sidebar="collapsed"] .you{display:none}
 .builder{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
 .builder-list{position:sticky;top:0;max-height:calc(100vh - 120px);overflow:auto}
 /* Card preview stacks on top of the inspector. The stage is capped + centered
-   so the 340px card sits in a proportioned container, not a vast empty canvas. */
+   so the 340px card sits in a proportioned container, not a vast empty canvas.
+   The stage is also sticky to the top of the scroll container, so the card
+   stays visible while the user scrolls through inspector fields below. */
 .builder-main{display:flex;flex-direction:column;gap:20px;min-width:0;max-width:1400px;width:100%;margin:0 auto}
-.builder-main > .stage-bg{max-width:720px;width:100%;align-self:center}
+.builder-main > .stage-bg{
+  max-width:720px;width:100%;align-self:center;
+  position:sticky;top:0;z-index:5;
+}
+/* Tighten the stage so it leaves more room for the inspector below */
+.builder-stage{gap:10px;padding:14px}
 .builder-stage{display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
 .builder-stage .spell-card{width:340px;aspect-ratio:5/7}
 
