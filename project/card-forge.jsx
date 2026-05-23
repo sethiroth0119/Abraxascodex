@@ -83,7 +83,7 @@ const CardForge = () => {
 
       {/* filter row */}
       <div style={{display:'flex',gap:14,marginBottom:18,alignItems:'flex-start',flexWrap:'wrap'}}>
-        <div className="chip-row" style={{flex:1,minWidth:300}}>
+        <div className="chip-row" style={{minWidth:0}}>
           <div className={`chip ${filterType==='all'?'active':''}`} onClick={()=>setFilterType('all')}>All Types</div>
           {window.CARD_TYPES.map(t =>
             <div key={t.id} className={`chip ${filterType===t.id?'active':''}`} onClick={()=>setFilterType(t.id)}>

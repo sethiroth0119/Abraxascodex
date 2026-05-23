@@ -35,7 +35,7 @@
 *{box-sizing:border-box}
 /* Global readability scale: the type system uses many hardcoded px sizes (10–13px);
    zoom scales text + spacing uniformly so the layout stays proportional. */
-html{zoom:1.2}
+html{zoom:1.1}
 html,body{margin:0;padding:0;background:var(--parchment);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv11"}
 body{
   min-height:100vh;
@@ -623,7 +623,7 @@ body[data-sidebar="collapsed"] .you{display:none}
 .builder-list{position:sticky;top:0;max-height:calc(100vh - 120px);overflow:auto}
 /* Card stage sits next to the inspector on wide screens instead of taking the full 1fr
    column (which left a huge empty canvas around the 340px card). Stacks on narrow screens. */
-.builder-main{display:grid;grid-template-columns:420px minmax(0,1fr);gap:20px;align-items:start;min-width:0}
+.builder-main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px;align-items:start;min-width:0}
 @media (max-width:1180px){.builder-main{grid-template-columns:1fr}}
 .builder-stage{display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
 .builder-stage .spell-card{width:340px;aspect-ratio:5/7}
@@ -669,7 +669,8 @@ body[data-sidebar="collapsed"] .you{display:none}
 .field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 
 .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
-.stat-cell{display:flex;flex-direction:column;gap:3px}
+.stat-cell{display:flex;flex-direction:column;gap:3px;min-width:0}
+.stat-cell .field-input{min-width:0;width:100%}
 .stat-cell-key{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-faint);text-transform:uppercase}
 .stat-cell-input{padding:5px 8px;font-family:var(--mono);font-size:13px;text-align:center}
 
@@ -684,7 +685,7 @@ body[data-sidebar="collapsed"] .you{display:none}
 .chip .dot{width:8px;height:8px;border-radius:50%}
 
 /* tabs */
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--rule);margin-bottom:16px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid var(--rule);margin-bottom:16px}
 .tab{
   padding:8px 14px;font-family:var(--display);font-size:13px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-faint);cursor:pointer;border-bottom:1px solid transparent;margin-bottom:-1px;
