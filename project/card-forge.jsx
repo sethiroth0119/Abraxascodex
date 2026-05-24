@@ -123,7 +123,14 @@ const CardForge = () => {
       {selected && <div className="builder">
         {/* LIST */}
         <div className="panel builder-list">
-          <div className="panel-head"><div className="panel-title">Codex · {filtered.length}</div></div>
+          <div className="panel-head">
+            <div className="panel-title">Codex · {filtered.length}</div>
+            <button className="btn btn-primary" onClick={createCard}
+                    style={{marginLeft:'auto',padding:'4px 10px',fontSize:12}}
+                    title="Forge a new card">
+              <Icon name="add" size={12}/> New
+            </button>
+          </div>
           <div>
             {filtered.map(c => {
               const elemId = (c.elements||[c.element])[0] || 'fire';
