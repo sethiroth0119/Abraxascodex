@@ -58,13 +58,14 @@ async function requireAuth() {
   // CSS hook so styles.css viewer rules activate immediately
   document.body.dataset.viewer = window.IS_VIEWER ? 'true' : 'false';
 
-  // Build the set of pages this role can see
+  // Build the set of pages this role can see.
+  // Card Forge ('cards') is open to all members — community design + voting.
+  const ALWAYS_ALLOWED = ['cards'];
   const myPerms = allPerms.find(p => p.role === role);
-  // Admins always get everything; fall back to all pages if tables not ready
   window.ALLOWED_PAGES = new Set(
     role === 'admin' ? ALL_PAGES :
-    myPerms          ? myPerms.allowed_pages :
-                       ALL_PAGES   // graceful fallback
+    myPerms          ? [...myPerms.allowed_pages, ...ALWAYS_ALLOWED] :
+                       ALL_PAGES   // graceful fallback when role_permissions table is empty
   );
 
   return data.session;

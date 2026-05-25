@@ -14,6 +14,79 @@ const computePrice = (card) => {
   return Math.round((base + stat*8 + passiveBonus + kalonBonus) * costMult * typeMult);
 };
 
+// --- Community Voting ----------------------------------------------------
+// Each card has three vote categories: Best Card, Best Art, Best Balance.
+// Backed by the `card_votes` Supabase table (see supabase-card-votes.sql).
+// Failures (e.g. table not yet created) degrade silently so the inspector
+// still works — counts just stay at 0.
+const VOTE_CATEGORIES = [
+  { id:'best_card',    label:'Best Card',    icon:'🏆' },
+  { id:'best_art',     label:'Best Art',     icon:'🎨' },
+  { id:'best_balance', label:'Best Balance', icon:'⚖️' },
+];
+
+const CardVotes = ({ cardId }) => {
+  const [counts, setCounts]   = React.useState({ best_card:0, best_art:0, best_balance:0 });
+  const [myVotes, setMyVotes] = React.useState(new Set());
+  const [busy, setBusy]       = React.useState(false);
+  const [err, setErr]         = React.useState(null);
+
+  const loadVotes = React.useCallback(async () => {
+    if (!cardId || !window.supabaseClient) return;
+    const { data, error } = await window.supabaseClient
+      .from('card_votes').select('user_id, category').eq('card_id', cardId);
+    if (error) { setErr(error.message); return; }
+    const c = { best_card:0, best_art:0, best_balance:0 };
+    const mine = new Set();
+    const me = window.CURRENT_USER && window.CURRENT_USER.id;
+    for (const v of (data || [])) {
+      c[v.category] = (c[v.category] || 0) + 1;
+      if (v.user_id === me) mine.add(v.category);
+    }
+    setCounts(c); setMyVotes(mine); setErr(null);
+  }, [cardId]);
+
+  React.useEffect(() => { loadVotes(); }, [loadVotes]);
+
+  const toggle = async (category) => {
+    if (busy || !window.supabaseClient || !window.CURRENT_USER) return;
+    setBusy(true);
+    try {
+      const me = window.CURRENT_USER.id;
+      if (myVotes.has(category)) {
+        await window.supabaseClient.from('card_votes')
+          .delete().eq('card_id', cardId).eq('user_id', me).eq('category', category);
+      } else {
+        await window.supabaseClient.from('card_votes')
+          .insert({ card_id: cardId, user_id: me, category });
+      }
+      await loadVotes();
+    } catch (e) { setErr(e.message || String(e)); }
+    finally    { setBusy(false); }
+  };
+
+  return (
+    <div className="field span-3">
+      <label className="field-label">Community Vote</label>
+      <div className="chip-row">
+        {VOTE_CATEGORIES.map(c => (
+          <div key={c.id}
+               className={`chip ${myVotes.has(c.id) ? 'active' : ''}`}
+               onClick={() => toggle(c.id)}
+               style={{cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.6 : 1}}
+               title={myVotes.has(c.id) ? `Click to remove your ${c.label} vote` : `Vote ${c.label}`}>
+            <span style={{fontSize:14, marginRight:2}}>{c.icon}</span>
+            {c.label} · {counts[c.id]}
+          </div>
+        ))}
+      </div>
+      {err && <div style={{fontSize:11, color:'var(--ember)', marginTop:6}}>
+        Voting unavailable: {err.includes('relation') ? 'run supabase-card-votes.sql in your Supabase dashboard first.' : err}
+      </div>}
+    </div>
+  );
+};
+
 const CardForge = () => {
   const [cards, setCards] = window.useEntities ? window.useEntities('cards') : React.useState(window.CARDS);
   const [selectedId, setSelectedId] = React.useState(window.CARDS[0]?.id);
@@ -407,6 +480,29 @@ const CardForge = () => {
                 </select>
               </div>
 
+              {/* Mechanical wiring (ported from the live game) */}
+              <div className="field">
+                <label className="field-label">Trigger</label>
+                <select className="field-select" value={selected.trigger||''} onChange={e=>update({trigger:e.target.value||null})}>
+                  <option value="">— none —</option>
+                  {(window.TRIGGERS||[]).map(t => <option key={t.id} value={t.id}>{t.icon} {t.name}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">Active Zone</label>
+                <select className="field-select" value={selected.zone||''} onChange={e=>update({zone:e.target.value||null})}>
+                  <option value="">— any —</option>
+                  {(window.ZONES||[]).map(z => <option key={z.id} value={z.id}>{z.icon} {z.name}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">Power Tier</label>
+                <select className="field-select" value={selected.tier||''} onChange={e=>update({tier:e.target.value||null})}>
+                  <option value="">— unrated —</option>
+                  {(window.TIERS||[]).map(t => <option key={t.id} value={t.id}>{t.name} (P{t.power})</option>)}
+                </select>
+              </div>
+
               <div className="field">
                 <label className="field-label">Set</label>
                 <input className="field-input" value={selected.set||''} onChange={e=>update({set:e.target.value})}/>
@@ -429,6 +525,9 @@ const CardForge = () => {
                   <span className="chip"><Icon name="add" size={11}/> tag</span>
                 </div>
               </div>
+
+              {/* Community voting — Best Card / Best Art / Best Balance */}
+              <CardVotes cardId={selected.id} />
 
               <div className="field">
                 <label className="field-label">Auto-priced</label>

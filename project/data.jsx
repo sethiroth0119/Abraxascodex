@@ -85,6 +85,40 @@ const RARITIES = [
   { id:'mythic',    name:'Mythic',    color:'#d35a3a' },
 ];
 
+// Design-side mechanical systems ported from the live game (game-deploy/public/index.html).
+// These let card designers specify the behavioral wiring of a card.
+
+const TRIGGERS = [
+  { id:'on_play',       name:'On Play',         icon:'▶',  desc:'Resolves the moment the card enters play.' },
+  { id:'on_summon',     name:'On Summon',       icon:'✨', desc:'Triggers when a unit is summoned from any zone.' },
+  { id:'on_death',      name:'On Death',        icon:'💀', desc:'Resolves when the source is destroyed or sent to the graveyard.' },
+  { id:'on_attack',     name:'On Attack',       icon:'⚔️', desc:'Triggers when the source declares an attack.' },
+  { id:'on_damage',     name:'On Damage Taken', icon:'🩸', desc:'Triggers when the source takes damage.' },
+  { id:'on_heal',       name:'On Heal',         icon:'➕', desc:'Triggers when the source is healed.' },
+  { id:'start_of_turn', name:'Start of Turn',   icon:'🌅', desc:"Resolves at the start of the owner's turn." },
+  { id:'end_of_turn',   name:'End of Turn',     icon:'🌃', desc:"Resolves at the end of the owner's turn." },
+  { id:'on_cast',       name:'On Cast',         icon:'🌀', desc:'Triggers when a spell is cast.' },
+  { id:'on_discard',    name:'On Discard',      icon:'🗑', desc:'Triggers when the card is discarded.' },
+  { id:'passive',       name:'Passive',         icon:'∞',  desc:'Always active while in the listed zone.' },
+];
+
+const ZONES = [
+  { id:'play',      name:'In Play',   icon:'🟢', desc:'Active on the battlefield.' },
+  { id:'hand',      name:'In Hand',   icon:'🃏', desc:"Held in the owner's hand." },
+  { id:'deck',      name:'In Deck',   icon:'📚', desc:'Inside the library before being drawn.' },
+  { id:'graveyard', name:'Graveyard', icon:'⚰️', desc:'Destroyed or discarded.' },
+  { id:'exile',     name:'Exile',     icon:'🌌', desc:'Removed from the game.' },
+  { id:'spellbook', name:'Spellbook', icon:'📖', desc:'Sideboard / reserve pool.' },
+];
+
+const TIERS = [
+  { id:'t1', name:'Tier I',   power:1, color:'#9a8e6a', desc:'Starter / common power band.' },
+  { id:'t2', name:'Tier II',  power:2, color:'#7a9a52', desc:'Reliable mid-range.' },
+  { id:'t3', name:'Tier III', power:3, color:'#4a8aa8', desc:'Strong, format-defining.' },
+  { id:'t4', name:'Tier IV',  power:4, color:'#a48ad2', desc:'Tournament staple.' },
+  { id:'t5', name:'Tier V',   power:5, color:'#e6c068', desc:'Apex / banned-list candidates.' },
+];
+
 const CARD_TYPES_LEGACY = ['Spell','Unit','Relic','Hero','Location'];
 
 // Cards — empty in production. Use the Card Forge to create.
@@ -103,4 +137,4 @@ const TIMELINE = [];
 
 const ACTIVITY = [];
 
-Object.assign(window, { ELEMENTS, FACTIONS, RARITIES, CARD_TYPES_LEGACY, CARDS, HEROES, LINEAGE, TIMELINE, ACTIVITY, effectiveness });
+Object.assign(window, { ELEMENTS, FACTIONS, RARITIES, TRIGGERS, ZONES, TIERS, CARD_TYPES_LEGACY, CARDS, HEROES, LINEAGE, TIMELINE, ACTIVITY, effectiveness });
