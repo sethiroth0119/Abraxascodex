@@ -43,8 +43,16 @@ const CardForge = () => {
       rarity:'common', text:'Write the rules here.', passive:null, passive2:null,
       learnset:[], kalonForm:null,
       artist:'TBD', set:'Working', status:'WIP', tags:[] };
-    setCards([nc, ...cards]); setSelectedId(id); showToast('New card forged');
+    setCards(prev => [nc, ...prev]); setSelectedId(id); showToast('New card forged');
   };
+
+  // Auto-create a card when navigated here from the dashboard's "New Card" button.
+  React.useEffect(() => {
+    if (window.__pendingNewCard) {
+      window.__pendingNewCard = false;
+      createCard();
+    }
+  }, []);
 
   const update = (patch) => selected && setCards(cards.map(c => c.id === selectedId ? { ...c, ...patch } : c));
   const toggleArr = (key, val, max) => {

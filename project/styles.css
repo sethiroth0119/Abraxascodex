@@ -414,11 +414,11 @@ body[data-sidebar="collapsed"] .you{display:none}
 
 .content{flex:1;overflow:auto;position:relative}
 .page{padding:28px 36px 80px;max-width:1480px;margin:0 auto}
-.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:18px;border-bottom:1px solid var(--rule);margin-bottom:24px}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:18px;border-bottom:1px solid var(--rule);margin-bottom:24px}
 .page-title{font-family:var(--display);font-size:34px;letter-spacing:.06em;color:var(--ink);margin:0;line-height:1;text-shadow:0 0 40px rgba(200,30,30,.15)}
 .page-title .ornament{color:#ffffff;margin-right:10px;font-size:22px}
 .page-sub{color:var(--ink-faint);font-size:13px;letter-spacing:.18em;text-transform:uppercase;margin-top:6px}
-.page-actions{display:flex;gap:8px;align-items:center}
+.page-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
 
 /* card-like panels */
 .panel{

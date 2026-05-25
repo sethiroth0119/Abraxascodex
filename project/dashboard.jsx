@@ -73,8 +73,13 @@ const Dashboard = ({ setRoute }) => {
           <div className="page-sub">A studio overview, last lit · 3 minutes ago</div>
         </div>
         <div className="page-actions">
-          <button className="btn"><Icon name="search" size={14} /> Open Codex</button>
-          <button className="btn btn-primary"><Icon name="add" size={14} /> New Card</button>
+          <button className="btn" onClick={() => setRoute('cards')}>
+            <Icon name="search" size={14} /> Open Codex
+          </button>
+          <button className="btn btn-primary"
+                  onClick={() => { window.__pendingNewCard = true; setRoute('cards'); }}>
+            <Icon name="add" size={14} /> New Card
+          </button>
         </div>
       </div>
 
