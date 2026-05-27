@@ -520,18 +520,16 @@ function Topbar({
             </span>
           )}
         </div>
-        <div className="ms-brand" style={{order:2, flex:'0 0 auto', textAlign:'right'}}>
-          <span className="ms-brand-sub">A bestiary of</span>
-          <h1 className="ms-brand-title">The Mythic Spellbook</h1>
+        <div className="ms-brand" style={{order:2, flex:'0 1 auto', textAlign:'right', minWidth:0, overflow:'hidden'}}>
+          <span className="ms-brand-sub" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block'}}>A bestiary of</span>
+          <h1 className="ms-brand-title" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>The Mythic Spellbook</h1>
         </div>
       </div>
+      {/* Filters on the LEFT so they're always visible/clickable even if the
+          search expands or the right edge gets covered by an OS overlay.
+          Search is capped at 280px instead of flex:1 so it can't push the
+          filters off-screen. flex-wrap on the row handles narrow widths. */}
       <div className="ms-topbar-row2">
-        <input
-          className="ms-search"
-          placeholder="Search by name, lore, trait…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
         <select className="ms-filter" value={filterFaction} onChange={(e) => setFilterFaction(e.target.value)}>
           <option value="">All Factions</option>
           {window.MS.FACTIONS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
@@ -549,6 +547,13 @@ function Topbar({
           <option value="boss">Boss spreads</option>
           <option value="card">Grunt cards</option>
         </select>
+        <input
+          className="ms-search"
+          placeholder="Search by name, lore, trait…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{flex:'0 1 280px', minWidth:160}}
+        />
         {(search || filterFaction || filterElement || filterTier || filterLayout) && (
           <button className="ms-icon-btn faded" onClick={() => {
             setSearch(""); setFilterFaction(""); setFilterElement(""); setFilterTier(""); setFilterLayout("");
