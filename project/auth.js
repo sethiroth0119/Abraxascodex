@@ -13,7 +13,7 @@ window.supabaseClient  = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const ALL_PAGES = [
   'dashboard','systems','elements','factions','lore','timeline',
   'cards','moves','passives','statuses','natures',
-  'heroes','lineage',
+  'heroes','lineage','monsters',
   'threads','tasks','ideas','concepts','dialogue','bugs',
   'campaigns','worldEvents','resources','economy','relics',
   'playtest','activity','settings','users','sprites','live',
@@ -59,8 +59,9 @@ async function requireAuth() {
   document.body.dataset.viewer = window.IS_VIEWER ? 'true' : 'false';
 
   // Build the set of pages this role can see.
-  // Card Forge ('cards') is open to all members — community design + voting.
-  const ALWAYS_ALLOWED = ['cards'];
+  // Card Forge ('cards') and Monster Manual ('monsters') are open to all members —
+  // community design, voting, and browsing the bestiary.
+  const ALWAYS_ALLOWED = ['cards', 'monsters'];
   const myPerms = allPerms.find(p => p.role === role);
   window.ALLOWED_PAGES = new Set(
     role === 'admin' ? ALL_PAGES :

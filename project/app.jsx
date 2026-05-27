@@ -64,6 +64,7 @@ const App = () => {
       case 'heroes':    return <HeroesPage/>;
       case 'factions':  return <FactionsPage/>;
       case 'lineage':   return <LineagePage/>;
+      case 'monsters':  return <MonsterManual/>;
       case 'lore':      return <LorePage/>;
       case 'economy':   return <EconomyPage/>;
       case 'timeline':  return <TimelinePage/>;

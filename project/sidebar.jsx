@@ -18,6 +18,7 @@ const NAV = [
   { section: 'Inhabitants', items: [
     { id:'heroes',    label:'Heroes & NPCs',   icon:'hero',    badge:null },
     { id:'lineage',   label:'Lineages',        icon:'tree',    badge:null },
+    { id:'monsters',  label:'Monster Manual',  icon:'flask',   badge:null },
   ]},
   { section: 'Team', items: [
     { id:'threads',   label:'Threads',          icon:'comment', badge:null },
