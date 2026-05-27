@@ -7,6 +7,9 @@ const SEED = window.MS.MONSTERS;
 const STORE_KEY = "ms-bestiary-v1";
 
 // ---------- persistence ----------
+// localStorage keeps a per-browser cache so the UI is instant. Supabase is the
+// shared source of truth: admin/staff edits push there (debounced) and every
+// user pulls from there on open, so the Monster Manual stays in sync across users.
 function loadSaved() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -14,8 +17,65 @@ function loadSaved() {
     return JSON.parse(raw);
   } catch { return null; }
 }
+
+// ---------- Supabase sync (parent shell auth) ----------
+function getSupabase() {
+  try { return window.parent && window.parent.supabaseClient; } catch { return null; }
+}
+function getRole() {
+  try { return (window.parent && window.parent.CURRENT_ROLE) || ''; } catch { return ''; }
+}
+function canSync() {
+  const r = getRole();
+  return r === 'admin' || r === 'staff';
+}
+
+async function loadFromSupabase() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb.from('bestiary_entries').select('*').order('ord');
+    if (error) { console.warn('[bestiary] load failed:', error.message); return null; }
+    if (!data || data.length === 0) return null;
+    const entries = {};
+    const order = [];
+    for (const row of data) { entries[row.id] = row.data; order.push(row.id); }
+    return { entries, order };
+  } catch (e) { console.warn('[bestiary] load exception:', e && e.message); return null; }
+}
+
+// Track which IDs Supabase last saw so we can compute deletions.
+let _lastSyncedIds = null;
+let _syncTimer = null;
+
+async function pushToSupabase(state) {
+  if (!canSync()) return;
+  const sb = getSupabase();
+  if (!sb) return;
+  try {
+    const rows = state.order.map((id, i) => ({ id, data: state.entries[id], ord: i }));
+    if (rows.length) {
+      const { error } = await sb.from('bestiary_entries').upsert(rows);
+      if (error) { console.warn('[bestiary] upsert failed:', error.message); return; }
+    }
+    const currentIds = new Set(state.order);
+    if (_lastSyncedIds) {
+      const removed = [..._lastSyncedIds].filter(id => !currentIds.has(id));
+      if (removed.length) {
+        const { error } = await sb.from('bestiary_entries').delete().in('id', removed);
+        if (error) console.warn('[bestiary] delete failed:', error.message);
+      }
+    }
+    _lastSyncedIds = currentIds;
+  } catch (e) { console.warn('[bestiary] sync exception:', e && e.message); }
+}
+
 function saveState(state) {
+  // Local cache — instant.
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {}
+  // Shared sync — debounced so a rapid burst of typing only pushes once.
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => pushToSupabase(state), 800);
 }
 
 function makeBlankMonster() {
@@ -182,6 +242,19 @@ function App() {
   }, [undo, redo]);
 
   useEffectA(() => { saveState(data); }, [data]);
+
+  // On mount, pull the shared bestiary state from Supabase so every user sees
+  // whatever admins/staff have published. Server state wins over the local
+  // cache for the initial load; subsequent admin edits then push back up.
+  useEffectA(() => {
+    let cancelled = false;
+    loadFromSupabase().then(serverState => {
+      if (cancelled || !serverState) return;
+      _setData(serverState);
+      _lastSyncedIds = new Set(serverState.order);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // ---------- mutation helpers ----------
   const updateEntry = useCallback((id, next) => {
