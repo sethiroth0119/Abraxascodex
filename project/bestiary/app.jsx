@@ -491,20 +491,22 @@ function Topbar({
   sidebarOpen, onToggleSidebar, visibleCount, totalCount,
 }) {
   return (
-    <header className="ms-topbar">
-      <div className="ms-topbar-row1">
+    <header className="ms-topbar" style={{paddingRight:32}}>
+      {/* Row 1 — extra gap (18px) + a 32px right padding so the toolbar never
+          grazes the right edge; brand on the left, buttons spaced to the
+          middle area, empty right margin. */}
+      <div className="ms-topbar-row1" style={{gap:18}}>
         <button className="ms-icon-btn" onClick={onToggleSidebar} title="Index">
           {sidebarOpen ? "▣" : "▤"}
         </button>
-        {/* Brand title on the LEFT (right after the toggle) so it's never
-            clipped by the right edge. Action buttons stay in the middle and
-            the right side stays empty so OS overlays (Afterburner / RivaTuner)
-            don't cover anything clickable. */}
-        <div className="ms-brand" style={{flex:'0 1 auto', minWidth:0, overflow:'hidden'}}>
+        <div className="ms-brand" style={{flex:'0 1 auto', minWidth:0, overflow:'hidden', maxWidth:'40%'}}>
           <span className="ms-brand-sub" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block'}}>A bestiary of</span>
           <h1 className="ms-brand-title" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', margin:0}}>The Mythic Spellbook</h1>
         </div>
-        <div className="ms-topbar-controls" style={{margin:'0 auto', order:2}}>
+        {/* Subtle divider keeps brand and action group visually separate even
+            when the row gets crowded — no chance of them looking like one blob. */}
+        <span aria-hidden="true" style={{order:1, width:1, height:28, background:'#3a2a14', opacity:0.6, marginLeft:'auto'}} />
+        <div className="ms-topbar-controls" style={{order:2, marginRight:'auto'}}>
           <span className="ms-count">{visibleCount}<span style={{opacity:0.5}}> / {totalCount}</span></span>
           {canEdit ? (
             <>
