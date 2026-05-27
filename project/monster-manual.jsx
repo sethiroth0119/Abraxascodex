@@ -44,18 +44,20 @@ const MonsterManual = () => {
           background:'#0d0805',
         }}
       />
-      {/* Floating fullscreen toggle — sits over the iframe's top-left corner so
-          it doesn't clash with the bestiary's own top-right toolbar. */}
+      {/* Floating fullscreen toggle — bottom-right of the iframe so it never
+          clashes with the bestiary's toolbar OR the OS GPU/perf overlays that
+          typically render in the top-right corner. */}
       <button
         onClick={toggleFullscreen}
         title={isFull ? 'Exit fullscreen (Esc)' : 'Open the Monster Manual fullscreen'}
         style={{
-          position:'absolute', top:8, right:8, zIndex:10,
-          background:'rgba(20,16,10,0.85)', color:'#f1dca8',
+          position:'absolute', bottom:16, right:16, zIndex:10,
+          background:'rgba(20,16,10,0.92)', color:'#f1dca8',
           border:'1px solid #9a7a2a', borderRadius:2,
-          font:"600 11px 'IM Fell English SC', 'Cinzel', serif",
+          font:"600 12px 'IM Fell English SC', 'Cinzel', serif",
           letterSpacing:'.18em', textTransform:'uppercase',
-          padding:'5px 10px', cursor:'pointer',
+          padding:'8px 14px', cursor:'pointer',
+          boxShadow:'0 4px 12px rgba(0,0,0,0.5)',
         }}>
         {isFull ? '↙ Exit Fullscreen' : '⛶ Fullscreen'}
       </button>

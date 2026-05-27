@@ -496,11 +496,11 @@ function Topbar({
         <button className="ms-icon-btn" onClick={onToggleSidebar} title="Index">
           {sidebarOpen ? "▣" : "▤"}
         </button>
-        <div className="ms-brand">
-          <span className="ms-brand-sub">A bestiary of</span>
-          <h1 className="ms-brand-title">The Mythic Spellbook</h1>
-        </div>
-        <div className="ms-topbar-controls">
+        {/* Action buttons sit in the middle of the row so they're not in the
+            top-right corner where many OS overlays (Afterburner, RivaTuner,
+            Game Bar) draw — otherwise they're unclickable. Brand is moved
+            after the controls and right-aligned. */}
+        <div className="ms-topbar-controls" style={{margin:'0 auto', order:1}}>
           <span className="ms-count">{visibleCount}<span style={{opacity:0.5}}> / {totalCount}</span></span>
           {canEdit ? (
             <>
@@ -519,6 +519,10 @@ function Topbar({
               read-only
             </span>
           )}
+        </div>
+        <div className="ms-brand" style={{order:2, flex:'0 0 auto', textAlign:'right'}}>
+          <span className="ms-brand-sub">A bestiary of</span>
+          <h1 className="ms-brand-title">The Mythic Spellbook</h1>
         </div>
       </div>
       <div className="ms-topbar-row2">
