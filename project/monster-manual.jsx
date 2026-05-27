@@ -6,8 +6,10 @@
 // dual-React concerns while preserving every feature (drag-reorder, inline
 // editing via contenteditable, localStorage persistence).
 const MonsterManual = () => {
+  // Fill the entire .content area (which is position:relative + flex:1) with
+  // a perfectly-fitting iframe — no .page padding, no vh math, no overflow.
   return (
-    <div className="page" style={{maxWidth:'none', padding:0, margin:0}}>
+    <div style={{position:'absolute', inset:0}}>
       <iframe
         src="/bestiary/Bestiary.html"
         title="Monster Manual — Bestiary of Abraxas"
@@ -15,9 +17,7 @@ const MonsterManual = () => {
         style={{
           display:'block',
           width:'100%',
-          // .content fills the area below the topbar; subtract a bit so the
-          // iframe never produces an outer scrollbar.
-          height:'calc(100vh - 70px)',
+          height:'100%',
           border:'none',
           background:'#0d0805',
         }}

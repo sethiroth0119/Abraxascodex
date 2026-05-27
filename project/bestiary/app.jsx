@@ -33,7 +33,21 @@ function makeBlankMonster() {
 
 // =====================================================================
 function App() {
-  const [editing, setEditing] = useStateA(false);
+  // Permission gate from the parent Abraxascodex app. Only admin + staff can
+  // edit the Monster Manual; everyone else gets a read-only view. We wrap the
+  // internal setEditing so non-permitted users can't toggle edit mode even by
+  // calling internal callbacks (e.g. addEntry auto-sets editing=true).
+  const canEdit = (() => {
+    try {
+      const role = (window.parent && window.parent.CURRENT_ROLE) || '';
+      return role === 'admin' || role === 'staff';
+    } catch { return false; }
+  })();
+  const [editing, _setEditing] = useStateA(false);
+  const setEditing = canEdit ? _setEditing : () => {};
+  // Belt-and-suspenders: if someone flips editing on while not permitted, snap it back.
+  useEffectA(() => { if (!canEdit && editing) _setEditing(false); }, [canEdit, editing]);
+
   const [data, _setData] = useStateA(() => {
     const saved = loadSaved();
     let base;
@@ -305,7 +319,7 @@ function App() {
           filterElement={filterElement} setFilterElement={setFilterElement}
           filterTier={filterTier} setFilterTier={setFilterTier}
           filterLayout={filterLayout} setFilterLayout={setFilterLayout}
-          editing={editing} setEditing={setEditing}
+          editing={editing} setEditing={setEditing} canEdit={canEdit}
           onAdd={addEntry}
           onReset={resetAll}
           onUndo={undo} onRedo={redo}
@@ -399,7 +413,7 @@ function Topbar({
   filterElement, setFilterElement,
   filterTier, setFilterTier,
   filterLayout, setFilterLayout,
-  editing, setEditing,
+  editing, setEditing, canEdit,
   onAdd, onReset, onUndo, onRedo, canUndo, canRedo,
   sidebarOpen, onToggleSidebar, visibleCount, totalCount,
 }) {
@@ -415,15 +429,23 @@ function Topbar({
         </div>
         <div className="ms-topbar-controls">
           <span className="ms-count">{visibleCount}<span style={{opacity:0.5}}> / {totalCount}</span></span>
-          <button className="ms-icon-btn faded" onClick={onUndo} disabled={!canUndo}
-            title="Undo (⌘Z / Ctrl+Z)" style={{ opacity: canUndo ? 1 : 0.35 }}>↶ Undo</button>
-          <button className="ms-icon-btn faded" onClick={onRedo} disabled={!canRedo}
-            title="Redo (⇧⌘Z / Ctrl+Y)" style={{ opacity: canRedo ? 1 : 0.35 }}>Redo ↷</button>
-          <button className={"ms-icon-btn" + (editing ? " on" : "")} onClick={() => setEditing(e => !e)}>
-            {editing ? "✓ Done" : "✎ Edit"}
-          </button>
-          <button className="ms-icon-btn" onClick={onAdd} title="Add new entry">+ Beast</button>
-          <button className="ms-icon-btn faded" onClick={onReset} title="Reset to seed">↺</button>
+          {canEdit ? (
+            <>
+              <button className="ms-icon-btn faded" onClick={onUndo} disabled={!canUndo}
+                title="Undo (⌘Z / Ctrl+Z)" style={{ opacity: canUndo ? 1 : 0.35 }}>↶ Undo</button>
+              <button className="ms-icon-btn faded" onClick={onRedo} disabled={!canRedo}
+                title="Redo (⇧⌘Z / Ctrl+Y)" style={{ opacity: canRedo ? 1 : 0.35 }}>Redo ↷</button>
+              <button className={"ms-icon-btn" + (editing ? " on" : "")} onClick={() => setEditing(e => !e)}>
+                {editing ? "✓ Done" : "✎ Edit"}
+              </button>
+              <button className="ms-icon-btn" onClick={onAdd} title="Add new entry">+ Beast</button>
+              <button className="ms-icon-btn faded" onClick={onReset} title="Reset to seed">↺</button>
+            </>
+          ) : (
+            <span className="ms-count" style={{borderLeft:'1px solid #3a2a14', borderRight:'none', paddingLeft:8, marginLeft:2, opacity:0.7, fontStyle:'italic'}}>
+              read-only
+            </span>
+          )}
         </div>
       </div>
       <div className="ms-topbar-row2">
