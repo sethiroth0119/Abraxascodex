@@ -496,11 +496,15 @@ function Topbar({
         <button className="ms-icon-btn" onClick={onToggleSidebar} title="Index">
           {sidebarOpen ? "▣" : "▤"}
         </button>
-        {/* Action buttons sit in the middle of the row so they're not in the
-            top-right corner where many OS overlays (Afterburner, RivaTuner,
-            Game Bar) draw — otherwise they're unclickable. Brand is moved
-            after the controls and right-aligned. */}
-        <div className="ms-topbar-controls" style={{margin:'0 auto', order:1}}>
+        {/* Brand title on the LEFT (right after the toggle) so it's never
+            clipped by the right edge. Action buttons stay in the middle and
+            the right side stays empty so OS overlays (Afterburner / RivaTuner)
+            don't cover anything clickable. */}
+        <div className="ms-brand" style={{flex:'0 1 auto', minWidth:0, overflow:'hidden'}}>
+          <span className="ms-brand-sub" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block'}}>A bestiary of</span>
+          <h1 className="ms-brand-title" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', margin:0}}>The Mythic Spellbook</h1>
+        </div>
+        <div className="ms-topbar-controls" style={{margin:'0 auto', order:2}}>
           <span className="ms-count">{visibleCount}<span style={{opacity:0.5}}> / {totalCount}</span></span>
           {canEdit ? (
             <>
@@ -519,10 +523,6 @@ function Topbar({
               read-only
             </span>
           )}
-        </div>
-        <div className="ms-brand" style={{order:2, flex:'0 1 auto', textAlign:'right', minWidth:0, overflow:'hidden'}}>
-          <span className="ms-brand-sub" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block'}}>A bestiary of</span>
-          <h1 className="ms-brand-title" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>The Mythic Spellbook</h1>
         </div>
       </div>
       {/* Filters on the LEFT so they're always visible/clickable even if the
