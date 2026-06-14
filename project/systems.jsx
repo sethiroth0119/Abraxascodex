@@ -53,7 +53,9 @@ const SystemsPage = () => {
     }
   }, [sel, current]);
 
-  if(!current) return <div className="page"><div style={{padding:40,color:'var(--ink-faint)',fontStyle:'italic'}}>No systems yet.</div></div>;
+  // Only admin + staff can create or destroy game systems. Everyone else
+  // sees the page but the "New system" / delete controls are hidden.
+  const canCreate = (window.CURRENT_ROLE === 'admin' || window.CURRENT_ROLE === 'staff');
 
   const update = (id, patch) => setSystems(systems.map(s => s.id===id ? {...s, ...patch, updated: Date.now()} : s));
   const updatePhase = (sysId, phaseId, patch) => {
@@ -118,11 +120,12 @@ const SystemsPage = () => {
     setSystems([s, ...systems]); setSel(id); setEditing(true);
   };
   const remove = (id) => {
+    if(!current) return;
     if(!confirm(`Delete the system "${current.name}"?`)) return;
     setSystems(systems.filter(s=>s.id!==id)); setSel(systems[0]?.id);
   };
 
-  const overallProgress = Math.round(current.phases.reduce((s,p)=>s+(p.complete||0),0) / Math.max(current.phases.length,1));
+  const overallProgress = current ? Math.round(current.phases.reduce((s,p)=>s+(p.complete||0),0) / Math.max(current.phases.length,1)) : 0;
 
   return (
     <div className="page">
@@ -132,10 +135,32 @@ const SystemsPage = () => {
           <div className="page-sub">{systems.length} system{systems.length!==1?'s':''} · structured design docs the team can work and build on</div>
         </div>
         <div className="page-actions">
-          <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New system</button>
+          {canCreate && (
+            <button className="btn btn-primary" onClick={create}>
+              <Icon name="add" size={14}/> New system
+            </button>
+          )}
         </div>
       </div>
 
+      {!current ? (
+        <div className="panel" style={{padding:'48px 32px', textAlign:'center'}}>
+          <div style={{fontSize:48, opacity:0.3, marginBottom:14}}>⚙</div>
+          <div style={{fontFamily:'var(--display)', fontSize:22, letterSpacing:'.06em', color:'var(--gold-bright)', marginBottom:8}}>
+            No systems yet
+          </div>
+          <div style={{fontFamily:'var(--serif)', fontStyle:'italic', color:'var(--ink-dim)', fontSize:14, maxWidth:480, margin:'0 auto 20px', lineHeight:1.5}}>
+            {canCreate
+              ? 'Game Systems are structured design docs the team can read, edit, and comment on. Click "New system" above to draft your first one.'
+              : 'No game systems have been published yet. Only admin and staff can create them — check back later, or ask your team lead.'}
+          </div>
+          {canCreate && (
+            <button className="btn btn-primary" onClick={create}>
+              <Icon name="add" size={14}/> Forge first system
+            </button>
+          )}
+        </div>
+      ) : (
       <div style={{display:'grid',gridTemplateColumns:'220px 1fr',gap:24,alignItems:'start'}}>
         {/* sidebar list */}
         <aside className="wiki-toc">
@@ -198,7 +223,7 @@ const SystemsPage = () => {
                 <div style={{display:'flex',gap:6,flexShrink:0}}>
                   {!editing && <button className="btn" onClick={()=>setEditing(true)}><Icon name="pencil" size={12}/> Edit</button>}
                   {editing && <button className="btn btn-primary" onClick={()=>setEditing(false)}><Icon name="check" size={12}/> Done</button>}
-                  <button className="btn" onClick={()=>remove(current.id)} style={{color:'var(--ember)'}}>✕</button>
+                  {canCreate && <button className="btn" onClick={()=>remove(current.id)} style={{color:'var(--ember)'}} title="Delete this system">✕</button>}
                 </div>
               </div>
 
@@ -386,6 +411,7 @@ const SystemsPage = () => {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

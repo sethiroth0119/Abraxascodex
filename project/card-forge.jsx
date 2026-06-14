@@ -29,21 +29,24 @@ const CardVotes = ({ cardId }) => {
   const [counts, setCounts]   = React.useState({ best_card:0, best_art:0, best_balance:0 });
   const [myVotes, setMyVotes] = React.useState(new Set());
   const [busy, setBusy]       = React.useState(false);
-  const [err, setErr]         = React.useState(null);
+  // Always store err as a string so render-time .includes() can't throw.
+  const [err, setErr]         = React.useState('');
 
   const loadVotes = React.useCallback(async () => {
-    if (!cardId || !window.supabaseClient) return;
-    const { data, error } = await window.supabaseClient
-      .from('card_votes').select('user_id, category').eq('card_id', cardId);
-    if (error) { setErr(error.message); return; }
-    const c = { best_card:0, best_art:0, best_balance:0 };
-    const mine = new Set();
-    const me = window.CURRENT_USER && window.CURRENT_USER.id;
-    for (const v of (data || [])) {
-      c[v.category] = (c[v.category] || 0) + 1;
-      if (v.user_id === me) mine.add(v.category);
-    }
-    setCounts(c); setMyVotes(mine); setErr(null);
+    try {
+      if (!cardId || !window.supabaseClient) return;
+      const { data, error } = await window.supabaseClient
+        .from('card_votes').select('user_id, category').eq('card_id', cardId);
+      if (error) { setErr(String(error.message || error)); return; }
+      const c = { best_card:0, best_art:0, best_balance:0 };
+      const mine = new Set();
+      const me = window.CURRENT_USER && window.CURRENT_USER.id;
+      for (const v of (data || [])) {
+        c[v.category] = (c[v.category] || 0) + 1;
+        if (v.user_id === me) mine.add(v.category);
+      }
+      setCounts(c); setMyVotes(mine); setErr('');
+    } catch (e) { setErr(String(e && e.message || e || 'unknown error')); }
   }, [cardId]);
 
   React.useEffect(() => { loadVotes(); }, [loadVotes]);
@@ -61,7 +64,7 @@ const CardVotes = ({ cardId }) => {
           .insert({ card_id: cardId, user_id: me, category });
       }
       await loadVotes();
-    } catch (e) { setErr(e.message || String(e)); }
+    } catch (e) { setErr(String(e && e.message || e || 'unknown error')); }
     finally    { setBusy(false); }
   };
 
@@ -76,20 +79,27 @@ const CardVotes = ({ cardId }) => {
                style={{cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.6 : 1}}
                title={myVotes.has(c.id) ? `Click to remove your ${c.label} vote` : `Vote ${c.label}`}>
             <span style={{fontSize:14, marginRight:2}}>{c.icon}</span>
-            {c.label} · {counts[c.id]}
+            {c.label} · {counts[c.id] || 0}
           </div>
         ))}
       </div>
       {err && <div style={{fontSize:11, color:'var(--ember)', marginTop:6}}>
-        Voting unavailable: {err.includes('relation') ? 'run supabase-card-votes.sql in your Supabase dashboard first.' : err}
+        Voting unavailable: {String(err).indexOf('relation') >= 0
+          ? 'run supabase-card-votes.sql in your Supabase dashboard first.'
+          : String(err)}
       </div>}
     </div>
   );
 };
 
 const CardForge = () => {
-  const [cards, setCards] = window.useEntities ? window.useEntities('cards') : React.useState(window.CARDS);
-  const [selectedId, setSelectedId] = React.useState(window.CARDS[0]?.id);
+  // Defensive: window.CARDS *should* be an array (data.jsx + store.jsx hydrate),
+  // but if a stale localStorage entry or a load-order quirk leaves it
+  // undefined / null / non-array, fall back to [] so nothing downstream
+  // explodes (e.g. spreads, .find, .map all assume array).
+  const seed = Array.isArray(window.CARDS) ? window.CARDS : [];
+  const [cards, setCards] = window.useEntities ? window.useEntities('cards') : React.useState(seed);
+  const [selectedId, setSelectedId] = React.useState(seed[0]?.id);
   const [filterType, setFilterType] = React.useState('all');
   const [filterElem, setFilterElem] = React.useState('all');
   const [filterRarity, setFilterRarity] = React.useState('all');
@@ -116,14 +126,20 @@ const CardForge = () => {
       rarity:'common', text:'Write the rules here.', passive:null, passive2:null,
       learnset:[], kalonForm:null,
       artist:'TBD', set:'Working', status:'WIP', tags:[] };
-    setCards(prev => [nc, ...prev]); setSelectedId(id); showToast('New card forged');
+    // Functional updater + array guard — never blow up even if `cards`
+    // is briefly undefined (e.g. across a hot re-render or a bad cache).
+    setCards(prev => [nc, ...(Array.isArray(prev) ? prev : [])]);
+    setSelectedId(id);
+    showToast('New card forged');
   };
 
   // Auto-create a card when navigated here from the dashboard's "New Card" button.
+  // Wrapped in try/catch so a transient render error can't blank the whole page.
   React.useEffect(() => {
     if (window.__pendingNewCard) {
       window.__pendingNewCard = false;
-      createCard();
+      try { createCard(); }
+      catch (e) { console.warn('[card-forge] auto-create failed:', e && e.message); }
     }
   }, []);
 
