@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Cinder Codex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/book.css">
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="embers" id="embers"></div>
+
+    <div class="purse" id="purse" title="Thy Cinder">
+      <span class="purse-coin" aria-hidden="true">C</span>
+      <span class="purse-amt" id="purseAmt">0</span>
+      <span class="purse-label">Cinder</span>
+    </div>
+
+    <div class="book-area" id="bookArea">
+      <button class="nav prev" id="navPrev" aria-label="Previous page">&#8249;</button>
+      <button class="nav next" id="navNext" aria-label="Next page">&#8250;</button>
+
+      <div class="book-scale" id="bookScale">
+        <div class="book" id="book">
+          <div class="spread" id="spread">
+            <div class="page left"  id="leftPage"></div>
+            <div class="page right" id="rightPage"></div>
+            <div class="spine"></div>
+            <div class="hot prev" id="hotPrev"></div>
+            <div class="hot next" id="hotNext"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ribbon" id="ribbon"></div>
+    </div>
+
+    <div class="vignette"></div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- casting receipt -->
+  <div class="receipt-veil" id="receiptVeil" hidden>
+    <div class="receipt" role="dialog" aria-modal="true">
+      <div class="r-seal" aria-hidden="true"><span class="e-diamond"></span><span class="e-core"></span></div>
+      <p class="r-kicker">Cast into the Embers</p>
+      <h3 class="r-title" id="rTitle"></h3>
+      <p class="r-id">Sigil <b id="rId"></b></p>
+      <div class="r-rows" id="rRows"></div>
+      <p class="r-status"><i></i>Awaiting the reading of the Keepers</p>
+      <div class="r-actions">
+        <button class="btn btn-gold" data-action="inscribe-another">Inscribe another</button>
+        <button class="btn btn-ghost" data-action="view-tellings">My Tellings</button>
+      </div>
+    </div>
+  </div>
+
+  <template id="__bundler_thumbnail" data-bg-color="#1a0f08">
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="800" fill="#1a0f08"/>
+      <circle cx="600" cy="338" r="92" fill="none" stroke="#c89b3c" stroke-width="6"/>
+      <rect x="548" y="286" width="104" height="104" transform="rotate(45 600 338)" fill="none" stroke="#8a661f" stroke-width="4"/>
+      <rect x="582" y="320" width="36" height="36" transform="rotate(45 600 338)" fill="#d97a2a"/>
+      <text x="600" y="540" text-anchor="middle" font-family="Georgia, serif" font-size="104" font-weight="600" letter-spacing="14" fill="#c89b3c">CAMPAIGN</text>
+      <text x="600" y="600" text-anchor="middle" font-family="Georgia, serif" font-size="34" font-style="italic" fill="#e2d2ad">Mythic Spellbook Stories</text>
+    </svg>
+  </template>
+
+  <script src="js/content.js"></script>
+  <script src="js/submit.js"></script>
+  <script src="js/book.js"></script>
+</body>
+</html>

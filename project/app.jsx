@@ -69,6 +69,7 @@ const App = () => {
       case 'economy':   return <EconomyPage/>;
       case 'timeline':  return <TimelinePage/>;
       case 'campaigns': return <CampaignsPage/>;
+      case 'campaignCreator': return <CampaignCreator/>;
       case 'relics':    return <RelicsPage/>;
       case 'playtest':  return <PlaytestPage/>;
       case 'activity':  return <ActivityPage/>;

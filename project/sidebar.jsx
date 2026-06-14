@@ -29,6 +29,7 @@ const NAV = [
     { id:'bugs',      label:'Bug Tracker',      icon:'flask',   badge:null },
   ]},
   { section: 'Game', items: [
+    { id:'campaignCreator', label:'Campaign Creator', icon:'pencil', badge:null },
     { id:'campaigns',  label:'Campaigns / RLC', icon:'scroll',  badge:null },
     { id:'worldEvents',label:'World Events',    icon:'flask',   badge:null },
     { id:'resources',  label:'Resources',       icon:'relic',   badge:null },
