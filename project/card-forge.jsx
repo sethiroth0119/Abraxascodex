@@ -231,16 +231,21 @@ const CardForge = () => {
           <div>
             {filtered.map(c => {
               const elemId = (c.elements||[c.element])[0] || 'fire';
-              const e = window.ELEMENTS.find(x=>x.id===elemId);
-              const t = window.CARD_TYPES.find(x=>x.id===c.type) || {icon:'•'};
+              // Defaults guard against a saved card that references an element
+              // / card-type / rarity the user has since deleted from their
+              // codex — otherwise `e.color` / `c.rarity[0]` would crash the
+              // entire CardForge render and blank the page.
+              const e = (window.ELEMENTS||[]).find(x=>x.id===elemId) || { color:'#9a8e6a', icon:'?', name:elemId };
+              const t = (window.CARD_TYPES||[]).find(x=>x.id===c.type) || { icon:'•' };
+              const rarity = c.rarity || 'common';
               return (
                 <div key={c.id} className={`list-row ${c.id===selectedId?'active':''}`} onClick={()=>setSelectedId(c.id)}>
                   <div className="list-thumb" style={{borderColor:e.color, color:e.color}}>{e.icon}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div className="list-name" style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.name}</div>
-                    <div className="list-meta">{t.icon} {c.type} · {c.cost} ⚡ · {c.rarity}</div>
+                    <div className="list-name" style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.name || '(untitled)'}</div>
+                    <div className="list-meta">{t.icon} {c.type||'—'} · {c.cost||0} ⚡ · {rarity}</div>
                   </div>
-                  <span className={`pill r-${c.rarity}`}>{c.rarity[0].toUpperCase()}</span>
+                  <span className={`pill r-${rarity}`}>{rarity[0].toUpperCase()}</span>
                 </div>
               );
             })}
