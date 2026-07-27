@@ -63,6 +63,32 @@ const ENTITY_KEYS = [
   }
 })();
 
+// Union canonical entries (by id) into a loaded list, keeping any custom
+// additions. Canon acts as a floor so core elements/factions can't disappear.
+function _unionById(canon, current) {
+  const arr = Array.isArray(current) ? current.slice() : [];
+  const have = new Set(arr.map(x => x && x.id));
+  (canon || []).forEach(c => { if (c && !have.has(c.id)) arr.push(c); });
+  return arr;
+}
+
+// Catalog top-up: make sure the LOCAL elements/factions include every canonical
+// entry (restores a missing Fire; adds newly-shipped Werewolf/Hero) so the Card
+// Forge pickers are complete on first paint, before any cloud round-trip.
+(function catalogTopup() {
+  try {
+    [['elements', 'ELEMENTS', window.__CANON_ELEMENTS],
+     ['factions', 'FACTIONS', window.__CANON_FACTIONS]].forEach(([k, wk, canon]) => {
+      if (!canon) return;
+      const merged = _unionById(canon, window[wk]);
+      if (merged.length !== (Array.isArray(window[wk]) ? window[wk].length : 0)) {
+        window[wk] = merged;
+        try { localStorage.setItem(STORE_PREFIX + k, JSON.stringify(merged)); } catch(e) {}
+      }
+    });
+  } catch(e) {}
+})();
+
 // ── Shared cloud backing ────────────────────────────────────────────────
 // Every collection (heroes, lore, moves, factions, settings, …) is mirrored to
 // the Supabase `studio_collections` table so all staff/admins share one studio.
@@ -120,9 +146,17 @@ function useEntities(key) {
         const cloud = await _collLoad(key);
         if (cancelled) return;
         if (cloud !== undefined) {
-          remoteJson.current = JSON.stringify(cloud);
-          window[wk] = cloud;
-          setItems(cloud);
+          let val = cloud;
+          // Keep canonical elements/factions present even in the shared pool.
+          const canon = key === 'elements' ? window.__CANON_ELEMENTS
+                      : key === 'factions' ? window.__CANON_FACTIONS : null;
+          if (canon) {
+            val = _unionById(canon, cloud);
+            if (val.length !== (Array.isArray(cloud) ? cloud.length : 0) && _canWriteCloud()) _collSave(key, val);
+          }
+          remoteJson.current = JSON.stringify(val);
+          window[wk] = val;
+          setItems(val);
         } else if (_canWriteCloud() && !_isEmptyVal(window[wk])) {
           remoteJson.current = JSON.stringify(window[wk]);
           _collSave(key, window[wk]);

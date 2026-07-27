@@ -74,6 +74,8 @@ const FACTIONS = [
   { id:'champion',     name:'Champion',     icon:'🏆',  color:'#d4af37', desc:'Tournament victors, legendary duelists, named heroes.' },
   { id:'swarm',        name:'Swarm',        icon:'🐜',  color:'#6a4a2a', desc:'Collective consciousnesses, hive-minds, locust clouds.' },
   { id:'alien',        name:'Alien',        icon:'👽',  color:'#7ad07a', desc:'Xenomorphs, parasites, things from beyond the stars. Carriers of the Infection.' },
+  { id:'werewolf',     name:'Werewolf',     icon:'🐺',  color:'#6b5535', desc:'Lycanthropes, moon-cursed shifters, feral pack-hunters.' },
+  { id:'hero',         name:'Hero',         icon:'🦸',  color:'#e6c068', desc:'Champions and named protagonists — the realm’s legendary saviors.' },
 ];
 
 const RARITIES = [
@@ -138,3 +140,9 @@ const TIMELINE = [];
 const ACTIVITY = [];
 
 Object.assign(window, { ELEMENTS, FACTIONS, RARITIES, TRIGGERS, ZONES, TIERS, CARD_TYPES_LEGACY, CARDS, HEROES, LINEAGE, TIMELINE, ACTIVITY, effectiveness });
+
+// Canonical catalog snapshots — the store unions these into the live (local /
+// cloud) elements & factions so core entries (e.g. Fire) can never go missing,
+// and newly-shipped ones (Werewolf, Hero) appear even over an existing override.
+window.__CANON_ELEMENTS = ELEMENTS.slice();
+window.__CANON_FACTIONS = FACTIONS.slice();
