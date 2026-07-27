@@ -204,6 +204,17 @@ const App = () => {
             Sign out
           </button>
         </div>
+        <div className="enginetabs">
+          {window.NAV.flatMap(g => g.items)
+            .filter(i => ['dashboard','cards','heroes','lore','elements','factions','timeline','monsters','sprites','live'].includes(i.id))
+            .filter(i => !allowedPages || allowedPages.has(i.id))
+            .map(i => (
+              <button key={i.id} className={`etab ${route === i.id ? 'active' : ''}`}
+                      onClick={() => setRoute(i.id)} title={i.label}>
+                <span className="etab-ic"><Icon name={i.icon} size={13}/></span>{i.label}
+              </button>
+            ))}
+        </div>
         <div className="viewer-banner">
           👁 You are in <strong style={{marginLeft:4,marginRight:4}}>read-only</strong> mode — browse the world, report bugs, and join threads.
         </div>

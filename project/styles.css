@@ -172,6 +172,19 @@ body[data-sidebar="collapsed"] .you{display:none}
   border-bottom:1px solid var(--rule);
   background:linear-gradient(180deg, var(--parchment-2), transparent);
 }
+/* Engine-style horizontal tab strip (Unreal-like), sits under the topbar */
+.enginetabs{display:flex;gap:2px;align-items:stretch;height:40px;flex:none;padding:0 12px;
+  border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg, rgba(47,155,255,.045), transparent);
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.enginetabs::-webkit-scrollbar{display:none}
+.etab{display:inline-flex;align-items:center;gap:7px;padding:0 15px;border:none;background:transparent;
+  color:var(--ink-faint);font-family:var(--display);font-size:12px;letter-spacing:.06em;cursor:pointer;
+  white-space:nowrap;border-bottom:2px solid transparent;
+  transition:color .14s, border-color .14s, background .14s}
+.etab:hover{color:var(--ink-dim);background:rgba(47,155,255,.05)}
+.etab.active{color:var(--gold-bright);border-bottom-color:var(--gold-bright);background:rgba(47,155,255,.08)}
+.etab .etab-ic{display:grid;place-items:center;opacity:.85}
 .crumbs{display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:15px;letter-spacing:.04em}
 .crumbs .sep{color:var(--ink-faint);font-size:12.5px}
 .crumbs .root{color:#ffffff}
