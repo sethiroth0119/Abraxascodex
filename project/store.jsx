@@ -63,30 +63,119 @@ const ENTITY_KEYS = [
   }
 })();
 
+// ── Shared cloud backing ────────────────────────────────────────────────
+// Every collection (heroes, lore, moves, factions, settings, …) is mirrored to
+// the Supabase `studio_collections` table so all staff/admins share one studio.
+// Cards are excluded — they have their own richer table (see cloud-cards.jsx).
+// Degrades silently to localStorage-only if the table/Supabase isn't available.
+const CLOUD_TABLE = 'studio_collections';
+const COLL_WRITE_ROLES = ['staff', 'moderator', 'admin'];
+const _collSaveTimers = {};
+
+const _isCloudKey = (key) => key !== 'cards' && !!window.supabaseClient;
+const _canWriteCloud = () => COLL_WRITE_ROLES.includes(window.CURRENT_ROLE);
+const _isEmptyVal = (v) => v == null
+  || (Array.isArray(v) ? v.length === 0
+      : (typeof v === 'object' ? Object.keys(v).length === 0 : false));
+
+async function _collLoad(key) {
+  // undefined return = no cloud row exists yet (never migrated)
+  const { data, error } = await window.supabaseClient
+    .from(CLOUD_TABLE).select('data').eq('key', key).maybeSingle();
+  if (error) throw error;
+  return data ? data.data : undefined;
+}
+function _collSave(key, value) {
+  if (!window.supabaseClient) return;
+  clearTimeout(_collSaveTimers[key]);
+  _collSaveTimers[key] = setTimeout(async () => {
+    try {
+      const uid = window.CURRENT_USER && window.CURRENT_USER.id;
+      const { error } = await window.supabaseClient.from(CLOUD_TABLE)
+        .upsert({ key, data: value, updated_by: uid }, { onConflict: 'key' });
+      if (error) throw error;
+    } catch (e) { console.warn('[store] cloud save failed for "' + key + '":', e && e.message); }
+  }, 500);
+}
+
 // Hook for managing a persistent collection. windowKey kept in sync.
 function useEntities(key) {
   const wk = (ENTITY_KEYS.find(([k]) => k === key) || [])[1] || key.toUpperCase();
-  const initial = window[wk];
-  const [items, setItems] = React.useState(initial);
+  const [items, setItems] = React.useState(window[wk]);
+  const cloudable = _isCloudKey(key);
+  // JSON of the value most recently pulled FROM the cloud — so we never echo a
+  // remote change straight back up, and so the initial local value doesn't
+  // clobber the cloud before the first fetch resolves.
+  const remoteJson = React.useRef(null);
+  const ready = React.useRef(false);
 
-  // Persist on change + sync to window + broadcast
+  // Initial cloud load + one-time seed. If a row exists we adopt it; if not and
+  // we're a writer with local data, we seed the shared pool from this browser
+  // (row-exists is the guard, so deleting everything can't resurrect).
+  React.useEffect(() => {
+    if (!cloudable) { ready.current = true; return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const cloud = await _collLoad(key);
+        if (cancelled) return;
+        if (cloud !== undefined) {
+          remoteJson.current = JSON.stringify(cloud);
+          window[wk] = cloud;
+          setItems(cloud);
+        } else if (_canWriteCloud() && !_isEmptyVal(window[wk])) {
+          remoteJson.current = JSON.stringify(window[wk]);
+          _collSave(key, window[wk]);
+        }
+      } catch (e) { /* offline / table missing → keep localStorage copy */ }
+      finally { ready.current = true; }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  // Persist on change: localStorage always; cloud only for writers, only once
+  // the initial load settled, and never for a value we just got from the cloud.
   React.useEffect(() => {
     try { localStorage.setItem(STORE_PREFIX + key, JSON.stringify(items)); } catch(e) {}
     window[wk] = items;
+    if (cloudable && _canWriteCloud() && ready.current && JSON.stringify(items) !== remoteJson.current) {
+      _collSave(key, items);
+    }
     window.dispatchEvent(new CustomEvent('studio:data-change', { detail: { key, items } }));
   }, [items, key, wk]);
 
-  // Cross-tab + cross-component sync — listen for changes by OTHER components/tabs
+  // Cross-component sync (same tab)
   React.useEffect(() => {
     const onChange = (e) => {
       if (e.detail && e.detail.key === key && e.detail.items !== items) {
-        // only update if external source changed it
         if (JSON.stringify(e.detail.items) !== JSON.stringify(items)) setItems(e.detail.items);
       }
     };
     window.addEventListener('studio:data-change', onChange);
     return () => window.removeEventListener('studio:data-change', onChange);
   }, [items, key]);
+
+  // Live sync: another staffer changed this collection in the shared pool.
+  React.useEffect(() => {
+    if (!cloudable || !window.supabaseClient.channel) return;
+    let ch;
+    try {
+      ch = window.supabaseClient
+        .channel('coll-' + key + '-' + Math.random().toString(36).slice(2))
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: CLOUD_TABLE, filter: 'key=eq.' + key },
+            async () => {
+              try {
+                const cloud = await _collLoad(key);
+                if (cloud !== undefined) { remoteJson.current = JSON.stringify(cloud); setItems(cloud); }
+              } catch (e) {}
+            })
+        .subscribe();
+    } catch (e) {}
+    return () => { try { window.supabaseClient.removeChannel(ch); } catch (e) {} };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   return [items, setItems];
 }
