@@ -12,6 +12,12 @@
 
 const CARD_LS_KEY = 'mss:cards';
 const WRITE_ROLES = ['staff', 'moderator', 'admin'];
+// When we last wrote locally. A live edit fires a debounced cloud save, which
+// echoes back as a realtime change; refetching then would overwrite the text
+// the user is still typing (dropped characters, jumping cursor). We ignore
+// realtime refetches within this window so typing is never clobbered.
+let _lastLocalWrite = 0;
+const _LOCAL_EDIT_WINDOW = 4000;
 
 const _lsRead = () => { try { const r = localStorage.getItem(CARD_LS_KEY); const a = r ? JSON.parse(r) : []; return Array.isArray(a) ? a : []; } catch { return []; } };
 const _lsWrite = (list) => { try { localStorage.setItem(CARD_LS_KEY, JSON.stringify(list || [])); } catch {} };
@@ -109,7 +115,11 @@ function useCloudCards() {
     let ch;
     try {
       ch = sb.channel('cards-live')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => reload())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => {
+          // Don't refetch (and clobber the input) while the user is mid-edit.
+          if (Date.now() - _lastLocalWrite < _LOCAL_EDIT_WINDOW) return;
+          reload();
+        })
         .subscribe();
     } catch (e) {}
     return () => { try { sb.removeChannel(ch); } catch (e) {} };
@@ -117,6 +127,7 @@ function useCloudCards() {
 
   const save = React.useCallback((card) => {
     if (!card || !card.id) return;
+    _lastLocalWrite = Date.now();
     let wasNew = false;
     setCards(prev => {
       const arr = Array.isArray(prev) ? prev : [];
@@ -133,6 +144,7 @@ function useCloudCards() {
 
   const remove = React.useCallback(async (id) => {
     if (!id) return;
+    _lastLocalWrite = Date.now();
     setCards(prev => {
       const next = (Array.isArray(prev) ? prev : []).filter(c => c.id !== id);
       window.CARDS = next;

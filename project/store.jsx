@@ -97,6 +97,12 @@ function _unionById(canon, current) {
 const CLOUD_TABLE = 'studio_collections';
 const COLL_WRITE_ROLES = ['staff', 'moderator', 'admin'];
 const _collSaveTimers = {};
+// Per-collection timestamp of the last local edit. A live edit fires a debounced
+// cloud save that echoes back as a realtime change; refetching then would
+// overwrite what the user is still typing. We skip realtime refetches within
+// this window so typing is never clobbered.
+const _lastCollWrite = {};
+const _COLL_EDIT_WINDOW = 4000;
 
 const _isCloudKey = (key) => key !== 'cards' && !!window.supabaseClient;
 const _canWriteCloud = () => COLL_WRITE_ROLES.includes(window.CURRENT_ROLE);
@@ -174,6 +180,7 @@ function useEntities(key) {
     try { localStorage.setItem(STORE_PREFIX + key, JSON.stringify(items)); } catch(e) {}
     window[wk] = items;
     if (cloudable && _canWriteCloud() && ready.current && JSON.stringify(items) !== remoteJson.current) {
+      _lastCollWrite[key] = Date.now();
       _collSave(key, items);
     }
     window.dispatchEvent(new CustomEvent('studio:data-change', { detail: { key, items } }));
@@ -200,6 +207,8 @@ function useEntities(key) {
         .on('postgres_changes',
             { event: '*', schema: 'public', table: CLOUD_TABLE, filter: 'key=eq.' + key },
             async () => {
+              // Don't refetch (and clobber the field) while the user is mid-edit.
+              if (Date.now() - (_lastCollWrite[key] || 0) < _COLL_EDIT_WINDOW) return;
               try {
                 const cloud = await _collLoad(key);
                 if (cloud !== undefined) { remoteJson.current = JSON.stringify(cloud); setItems(cloud); }
