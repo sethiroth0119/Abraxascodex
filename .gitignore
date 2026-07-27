@@ -1,3 +1,8 @@
 node_modules/
 .env
 *.log
+
+# large local archives / tooling (never commit)
+Mythic Spellbook.zip
+Mythic Spellbook/
+.claude/

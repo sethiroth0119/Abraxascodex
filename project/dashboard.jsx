@@ -64,7 +64,12 @@ const LiveStatusWidget = ({ setRoute }) => {
 
 // Forge Hall (dashboard)
 const Dashboard = ({ setRoute }) => {
-  const featured = window.CARDS.slice(0, 4);
+  // Live shared pool so Forge Hall shows every card the team forges, for
+  // everyone — staff/admins edit them in the Forge; the community votes here.
+  const cloud = window.useCloudCards ? window.useCloudCards() : null;
+  const cards = cloud ? (Array.isArray(cloud[0]) ? cloud[0] : [])
+                      : (Array.isArray(window.CARDS) ? window.CARDS : []);
+  const canWrite = cloud ? cloud[1].canWrite : true;
   return (
     <div className="page">
       <div className="page-head">
@@ -86,7 +91,7 @@ const Dashboard = ({ setRoute }) => {
       <div className="dash-grid">
         <div className="tile">
           <div className="tile-label">Cards in canon</div>
-          <div className="tile-num">{window.CARDS.length}</div>
+          <div className="tile-num">{cards.length}</div>
           <div className="tile-delta" style={{color:"var(--ink-faint)"}}>in canon</div>
           <div className="glyph">⚔</div>
         </div>
@@ -110,7 +115,7 @@ const Dashboard = ({ setRoute }) => {
         </div>
         <div className="tile">
           <div className="tile-label">Avg. mana cost</div>
-          <div className="tile-num">{window.CARDS.length ? (window.CARDS.reduce((s,c)=>s+(c.cost||0),0) / window.CARDS.length).toFixed(1) : "—"}</div>
+          <div className="tile-num">{cards.length ? (cards.reduce((s,c)=>s+(c.cost||0),0) / cards.length).toFixed(1) : "—"}</div>
           <div className="tile-delta" style={{color:"var(--ink-faint)"}}>avg mana cost</div>
           <div className="glyph">☉</div>
         </div>
@@ -124,12 +129,28 @@ const Dashboard = ({ setRoute }) => {
 
       <div className="section">
         <div className="section-head">
-          <div className="section-title">Recently forged <span className="ornament">·</span> Mythic Spellbook</div>
-          <div className="btn-ghost btn" onClick={() => setRoute('cards')}>Open Card Forge <Icon name="chevron" size={12} /></div>
+          <div className="section-title">The Card Codex <span className="ornament">·</span> {cards.length} forged</div>
+          {canWrite
+            ? <div className="btn-ghost btn" onClick={() => setRoute('cards')}>Open Card Forge <Icon name="chevron" size={12} /></div>
+            : <div className="wiki-meta">Vote on the team's cards below</div>}
         </div>
-        <div className="card-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))'}}>
-          {featured.map(c => <SpellCard key={c.id} card={c} onClick={() => setRoute('cards')} />)}
-        </div>
+        {cards.length === 0 ? (
+          <div className="panel" style={{padding:'44px 32px',textAlign:'center',color:'var(--ink-faint)',
+               fontFamily:'var(--serif)',fontStyle:'italic',fontSize:15}}>
+            {canWrite
+              ? 'No cards in the shared catalog yet — open the Card Forge to make the first one.'
+              : 'The team is still forging the first cards. Check back soon to browse and vote.'}
+          </div>
+        ) : (
+          <div className="card-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',alignItems:'start'}}>
+            {cards.map(c => (
+              <div key={c.id} className="panel" style={{padding:12,display:'flex',flexDirection:'column',gap:10}}>
+                <SpellCard card={c} onClick={canWrite ? () => setRoute('cards') : undefined} />
+                {window.CardVotes && <window.CardVotes cardId={c.id} />}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="section" style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:18}}>
@@ -137,8 +158,9 @@ const Dashboard = ({ setRoute }) => {
           <div className="panel-head"><div className="panel-title">Element coverage · 21 types</div><div className="wiki-meta">last patch · v0.41</div></div>
           <div className="panel-body" style={{maxHeight:480,overflow:'auto'}}>
             {window.ELEMENTS.map((e,i) => {
-              const count = window.CARDS.filter(c => c.element === e.id).length;
-              const max = Math.max(...window.ELEMENTS.map(x => window.CARDS.filter(c=>c.element===x.id).length), 3);
+              const has = (c, id) => (c.elements || (c.element ? [c.element] : [])).includes(id);
+              const count = cards.filter(c => has(c, e.id)).length;
+              const max = Math.max(...window.ELEMENTS.map(x => cards.filter(c=>has(c,x.id)).length), 3);
               const pct = (count / max) * 100;
               return (
                 <div key={e.id} style={{display:'grid',gridTemplateColumns:'150px 1fr 50px',gap:14,alignItems:'center',padding:'6px 0',borderBottom:'1px dashed var(--rule)'}}>

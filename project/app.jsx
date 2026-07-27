@@ -1,18 +1,69 @@
+// Error boundary — a render error in any single page used to throw all the
+// way to the root, and React 18 unmounts the WHOLE tree on an uncaught error.
+// That's why a crash in (e.g.) the Card Forge blanked the entire studio down
+// to the bare body background. This boundary catches the error, keeps the
+// sidebar/topbar alive, and shows the actual message + stack on screen so it
+// can be diagnosed and fixed instead of silently white-screening.
+class PageErrorBoundary extends React.Component {
+  constructor(props){ super(props); this.state = { error:null, info:null }; }
+  static getDerivedStateFromError(error){ return { error }; }
+  componentDidCatch(error, info){
+    this.setState({ info });
+    try { console.error('[PageErrorBoundary]', error, info); } catch(e){}
+  }
+  render(){
+    if(this.state.error){
+      const msg = (this.state.error && (this.state.error.message || String(this.state.error))) || 'Unknown error';
+      const stack = (this.state.info && this.state.info.componentStack) || (this.state.error && this.state.error.stack) || '';
+      return (
+        <div style={{padding:'40px 36px', maxWidth:760, margin:'0 auto'}}>
+          <div style={{fontSize:48, opacity:.3, marginBottom:14}}>⚠</div>
+          <div style={{fontFamily:'var(--display, Cinzel), serif', fontSize:24, letterSpacing:'.04em',
+            color:'var(--gold-bright, #f03030)', marginBottom:10}}>
+            This page hit an error
+          </div>
+          <div style={{fontFamily:'var(--serif, Cormorant Garamond), serif', fontStyle:'italic',
+            color:'var(--ink-dim, #d0d0d0)', fontSize:15, marginBottom:20, lineHeight:1.5}}>
+            The rest of the studio still works — use the sidebar to switch pages. Details below help pinpoint the fix.
+          </div>
+          <div style={{background:'rgba(204,34,34,.08)', border:'1px solid rgba(204,34,34,.35)',
+            borderRadius:8, padding:'14px 16px', fontFamily:'var(--mono, JetBrains Mono), monospace',
+            fontSize:13, color:'#ff8a8a', marginBottom:14, wordBreak:'break-word'}}>
+            {msg}
+          </div>
+          {stack && (
+            <pre style={{background:'rgba(0,0,0,.4)', border:'1px solid var(--rule, #242424)',
+              borderRadius:8, padding:'12px 14px', fontFamily:'var(--mono, JetBrains Mono), monospace',
+              fontSize:11, color:'#9aa', overflow:'auto', maxHeight:280, whiteSpace:'pre-wrap'}}>
+              {stack}
+            </pre>
+          )}
+          <button className="btn btn-primary" style={{marginTop:16}}
+            onClick={()=>this.setState({ error:null, info:null })}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Main app
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "dark",
   "density": "cozy",
-  "accent": "#cc2222",
+  "accent": "#2f9bff",
   "sidebar": "expanded",
   "frame": "gilded"
 }/*EDITMODE-END*/;
 
 const ACCENTS = [
-  '#cc2222', // blood
+  '#2f9bff', // engine blue
+  '#22d3ee', // cyan
   '#a48ad2', // aether
-  '#5a9a50', // verdant
-  '#e07030', // ember
-  '#4a9090', // tide
+  '#3fb950', // verdant
+  '#e0781f', // ember
 ];
 
 const App = () => {
@@ -90,6 +141,23 @@ const App = () => {
     }
   })();
 
+  // Role gate — never render a page this role isn't allowed to see, even if it
+  // was reached by something other than the (already filtered) sidebar.
+  const allowedPages = window.ALLOWED_PAGES;
+  const blocked = allowedPages && route !== 'profile' && !allowedPages.has(route);
+  const gatedPage = blocked ? (
+    <div className="page" style={{maxWidth:640, textAlign:'center', paddingTop:80}}>
+      <div style={{fontSize:52, opacity:.3, marginBottom:14}}>🔒</div>
+      <div style={{fontFamily:'var(--display)', fontSize:24, letterSpacing:'.06em', color:'var(--gold-bright)', marginBottom:10}}>
+        Staff & Admins only
+      </div>
+      <div style={{fontFamily:'var(--serif)', fontStyle:'italic', color:'var(--ink-dim)', fontSize:15, marginBottom:22, lineHeight:1.6}}>
+        This tool is part of the studio's creation suite. As a community member you can browse and vote on everything the team forges from Forge Hall.
+      </div>
+      <button className="btn btn-primary" onClick={()=>setRoute('dashboard')}>Back to Forge Hall</button>
+    </div>
+  ) : page;
+
   // crumb
   const navItem = window.NAV.flatMap(g=>g.items).find(i=>i.id===route) || {label:'Forge Hall'};
 
@@ -139,7 +207,11 @@ const App = () => {
         <div className="viewer-banner">
           👁 You are in <strong style={{marginLeft:4,marginRight:4}}>read-only</strong> mode — browse the world, report bugs, and join threads.
         </div>
-        <div className="content grain">{page}</div>
+        <div className="content grain">
+          {/* key={route} remounts the boundary per page so navigating away from
+              a broken page clears the error automatically. */}
+          <PageErrorBoundary key={route}>{gatedPage}</PageErrorBoundary>
+        </div>
       </div>
 
       {showProfile && <ProfilePage onClose={() => setShowProfile(false)}/>}

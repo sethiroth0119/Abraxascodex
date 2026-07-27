@@ -92,14 +92,62 @@ const CardVotes = ({ cardId }) => {
   );
 };
 
+// Bare card-art stage — replaces the framed SpellCard in the forge so the
+// user sees ONLY the uploaded/URL art. Drops persist via <image-slot>'s own
+// localStorage store; a pasted URL is stored on card.artUrl and re-applied
+// through the slot's `src` attribute (drops override src at render time).
+const CardArtStage = ({ card, slotId, onUrlChange }) => {
+  const [urlDraft, setUrlDraft] = React.useState(card.artUrl || '');
+  React.useEffect(() => { setUrlDraft(card.artUrl || ''); }, [card.id, card.artUrl]);
+  const commit = () => onUrlChange((urlDraft || '').trim());
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,width:'100%'}}>
+      <image-slot
+        id={slotId}
+        src={card.artUrl || ''}
+        shape="rounded"
+        radius="14"
+        placeholder="Drop card art here — or paste a URL below"
+        style={{width:340,height:476,display:'block'}}
+      ></image-slot>
+      <div style={{display:'flex',gap:6,width:'100%',maxWidth:520}}>
+        <input
+          className="field-input"
+          value={urlDraft}
+          onChange={e => setUrlDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }}
+          placeholder="Paste an image URL (https://…)"
+          style={{flex:1}}
+        />
+        <button className="btn" onClick={commit} title="Use this URL as the card art">Use URL</button>
+        {card.artUrl && (
+          <button className="btn btn-ghost" onClick={() => { setUrlDraft(''); onUrlChange(''); }} title="Clear URL (drop still applies)">✕</button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const CardForge = () => {
   // Defensive: window.CARDS *should* be an array (data.jsx + store.jsx hydrate),
   // but if a stale localStorage entry or a load-order quirk leaves it
   // undefined / null / non-array, fall back to [] so nothing downstream
   // explodes (e.g. spreads, .find, .map all assume array).
   const seed = Array.isArray(window.CARDS) ? window.CARDS : [];
-  const [cards, setCards] = window.useEntities ? window.useEntities('cards') : React.useState(seed);
+  // Shared cloud pool (Supabase) so all staff/admins edit ONE catalog and see
+  // each other's work. Falls back to local storage until the table exists.
+  const [cards, cardApi] = window.useCloudCards
+    ? window.useCloudCards()
+    : (() => { const [c, set] = (window.useEntities || React.useState)('cards');
+               return [c, { save:(card)=>set(p=>[card,...(Array.isArray(p)?p:[]).filter(x=>x.id!==card.id)]),
+                            remove:(id)=>set(p=>(Array.isArray(p)?p:[]).filter(x=>x.id!==id)),
+                            canWrite:true, source:'local' }]; })();
   const [selectedId, setSelectedId] = React.useState(seed[0]?.id);
+
+  // Once the shared pool loads, select the first card if nothing is chosen.
+  React.useEffect(() => {
+    if (!selectedId && Array.isArray(cards) && cards.length) setSelectedId(cards[0].id);
+  }, [cards, selectedId]);
   const [filterType, setFilterType] = React.useState('all');
   const [filterElem, setFilterElem] = React.useState('all');
   const [filterRarity, setFilterRarity] = React.useState('all');
@@ -126,9 +174,7 @@ const CardForge = () => {
       rarity:'common', text:'Write the rules here.', passive:null, passive2:null,
       learnset:[], kalonForm:null,
       artist:'TBD', set:'Working', status:'WIP', tags:[] };
-    // Functional updater + array guard — never blow up even if `cards`
-    // is briefly undefined (e.g. across a hot re-render or a bad cache).
-    setCards(prev => [nc, ...(Array.isArray(prev) ? prev : [])]);
+    cardApi.save(nc);
     setSelectedId(id);
     showToast('New card forged');
   };
@@ -143,7 +189,28 @@ const CardForge = () => {
     }
   }, []);
 
-  const update = (patch) => selected && setCards(cards.map(c => c.id === selectedId ? { ...c, ...patch } : c));
+  const update = (patch) => { if (selected) cardApi.save({ ...selected, ...patch }); };
+
+  const deleteCard = (id, name) => {
+    if (!id) return;
+    if (!window.confirm(`Delete "${name || 'this card'}"? This cannot be undone.`)) return;
+    // If the deleted card was selected, jump to the next-nearest one.
+    if (id === selectedId) {
+      const next = (Array.isArray(cards) ? cards : []).filter(c => c.id !== id);
+      setSelectedId(next[0]?.id || null);
+    }
+    cardApi.remove(id);
+    // Also drop the persisted art blob for this card so localStorage stays clean.
+    try {
+      const key = 'mss:image-slots';
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && obj[`card-${id}`]) { delete obj[`card-${id}`]; localStorage.setItem(key, JSON.stringify(obj)); }
+      }
+    } catch {}
+    showToast('Card deleted');
+  };
   const toggleArr = (key, val, max) => {
     const arr = selected[key] || [];
     let next;
@@ -169,12 +236,18 @@ const CardForge = () => {
           <h1 className="page-title"><span className="ornament">⚔</span>Card Forge</h1>
           <div className="page-sub">{filtered.length} of {cards.length} cards · Engine v0.41 · 7 card types · 21 elements · 40 factions</div>
         </div>
-        <div className="page-actions">
+        <div className="page-actions" style={{flexWrap:'wrap',justifyContent:'flex-end',rowGap:6}}>
           <button className="btn" onClick={() => showToast('Exported to card_catalog')}><Icon name="upload" size={14}/> Publish</button>
           <button className="btn"><Icon name="eye" size={14}/> Playtest</button>
           <button className="btn btn-primary" onClick={createCard}>
             <Icon name="add" size={14}/> New Card
           </button>
+          {selected && (
+            <button className="btn" onClick={() => deleteCard(selected.id, selected.name)} title="Delete the selected card"
+                    style={{color:'var(--ember)',borderColor:'var(--ember)'}}>
+              <Icon name="trash" size={14}/> Delete
+            </button>
+          )}
         </div>
       </div>
 
@@ -246,6 +319,12 @@ const CardForge = () => {
                     <div className="list-meta">{t.icon} {c.type||'—'} · {c.cost||0} ⚡ · {rarity}</div>
                   </div>
                   <span className={`pill r-${rarity}`}>{rarity[0].toUpperCase()}</span>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={ev => { ev.stopPropagation(); deleteCard(c.id, c.name); }}
+                    title={`Delete "${c.name || 'card'}"`}
+                    style={{padding:'2px 8px',fontSize:12,lineHeight:1,color:'var(--ember)',marginLeft:6}}
+                  >✕</button>
                 </div>
               );
             })}
@@ -269,11 +348,17 @@ const CardForge = () => {
           </div>
 
           <div className="builder-stage">
-            {tab !== 'comments' && tab !== 'moves' && <SpellCard card={selected} slotId={`card-${selected.id}`} />}
+            {tab !== 'comments' && tab !== 'moves' && (
+              <CardArtStage
+                card={selected}
+                slotId={`card-${selected.id}`}
+                onUrlChange={u => update({ artUrl: u })}
+              />
+            )}
 
             {tab === 'design' && (
               <div style={{display:'flex',gap:8,fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-faint)'}}>
-                <span>Drop art on the card</span> · <span>Edit fields in inspector</span> · <span>{selected.id}</span>
+                <span>Drop art or paste a URL</span> · <span>Edit fields in inspector</span> · <span>{selected.id}</span>
               </div>
             )}
 
@@ -570,4 +655,5 @@ const CardForge = () => {
 };
 
 window.CardForge = CardForge;
+window.CardVotes = CardVotes;          // reused in Forge Hall for community voting
 window.computePrice = computePrice;

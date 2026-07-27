@@ -12,9 +12,16 @@ const SpellCard = ({ card, onClick, style, slotId }) => {
   const type = card.type || 'unit';
   const showStats = (type==='unit' || type==='hero' || type==='wall');
 
-  const elemList = elements.map(id => window.ELEMENTS.find(e=>e.id===id)).filter(Boolean);
-  const facList  = factions.map(id => window.FACTIONS.find(f=>f.id===id)).filter(Boolean);
-  const primaryElem = elemList[0] || window.ELEMENTS[0];
+  // Guard every catalog lookup against a missing/empty window global so a
+  // bad card or a load-order hiccup can't throw and unmount the whole studio.
+  const ELS = Array.isArray(window.ELEMENTS) ? window.ELEMENTS : [];
+  const FACS = Array.isArray(window.FACTIONS) ? window.FACTIONS : [];
+  const elemList = elements.map(id => ELS.find(e=>e.id===id)).filter(Boolean);
+  const facList  = factions.map(id => FACS.find(f=>f.id===id)).filter(Boolean);
+  // Final fallback so `primaryElem.color` (used in the style below) is never
+  // undefined — even if the card's elements don't match any catalog entry and
+  // the ELEMENTS global hasn't hydrated yet.
+  const primaryElem = elemList[0] || ELS[0] || { id:'arcane', color:'#9a8e6a', icon:'◇', name:'Arcane' };
   const secondaryElem = elemList[1];
   const primaryFac = facList[0];
 
@@ -54,7 +61,7 @@ const SpellCard = ({ card, onClick, style, slotId }) => {
       {/* Art */}
       <div className={`sc-art ${slotId?'has-slot':''}`} style={{borderColor: primaryElem.color+'66'}}>
         {slotId
-          ? <image-slot id={slotId} shape="rect" placeholder="Drop card art"></image-slot>
+          ? <image-slot id={slotId} shape="rect" placeholder="Drop card art" src={card.artUrl||''}></image-slot>
           : <div className="sc-art-emoji" aria-hidden="true">{primaryElem.icon}</div>}
         {!slotId && <div className="sc-art-label">{card.artist === 'TBD' ? '◇ art pending' : `art · ${card.artist || '—'}`}</div>}
         {kalon && <div className="sc-kalon" title={`Kalon form: ${kalon.name}`}>⟁ kalon · {kalon.name}</div>}

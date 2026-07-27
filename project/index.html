@@ -5,28 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Abraxas Codex · Hidn Studios</title>
   <meta name="description" content="The living world-building engine behind Mythic Spellbook. Explore every card, character, and faction — and watch the game be forged alongside you."/>
+  <!-- Favicon — Cryptic Node emblem -->
+  <link rel="icon" type="image/png" href="favicon.png?v=2"/>
+  <link rel="apple-touch-icon" href="favicon.png?v=2"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Cormorant+SC:wght@400;500;600&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     /* ── Tokens ─────────────────────────────────────── */
     :root {
-      --gold:        #cc2222;
-      --gold-bright: #f03030;
-      --gold-deep:   #881a1a;
-      --ink:         #e8f0e8;
-      --ink-dim:     #9ab89a;
-      --ink-faint:   #4a6050;
-      --parchment:   #050805;
-      --p2:          #090e09;
-      --p3:          #0e150e;
-      --rule:        #1a281a;
-      --ember:       #e06820;
-      --verdant:     #4a9850;
-      --tide:        #38a0a0;
+      --gold:        #2f9bff;
+      --gold-bright: #63b8ff;
+      --gold-deep:   #1660a8;
+      --ink:         #e6edf3;
+      --ink-dim:     #9fb2c5;
+      --ink-faint:   #5f7183;
+      --parchment:   #0a0d12;
+      --p2:          #0e131b;
+      --p3:          #131b26;
+      --rule:        #1e2a38;
+      --ember:       #e0781f;
+      --verdant:     #3fb950;
+      --tide:        #22d3ee;
       --aether:      #a48ad2;
-      --serif:       "Cormorant Garamond", serif;
-      --display:     "Cormorant SC", serif;
+      --serif:       "Inter Tight", system-ui, sans-serif;
+      --display:     "Inter Tight", system-ui, sans-serif;
       --body:        "Inter Tight", system-ui, sans-serif;
     }
 
@@ -60,9 +63,9 @@
       justify-content: space-between;
       padding: 0 40px;
       height: 64px;
-      background: rgba(2,4,2,.92);
+      background: rgba(8,11,16,.92);
       backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(200,30,30,.18);
+      border-bottom: 1px solid rgba(47,155,255,.18);
     }
     .nav-brand {
       display: flex;
@@ -72,9 +75,9 @@
     .nav-mark {
       width: 36px; height: 36px;
       border-radius: 50%;
-      background: radial-gradient(circle at 40% 35%, #3a1010, #070c07);
+      background: radial-gradient(circle at 40% 35%, #123049, #070b12);
       border: 1px solid var(--gold-deep);
-      box-shadow: 0 0 16px rgba(184,40,40,.16);
+      box-shadow: 0 0 16px rgba(47,155,255,.16);
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
     }
@@ -140,16 +143,16 @@
       position: absolute;
       inset: 0;
       background: url('abraxas-bg.png') center center / cover no-repeat;
-      filter: saturate(.5) hue-rotate(100deg) brightness(.9);
-      opacity: .82;
+      filter: saturate(.55) hue-rotate(178deg) brightness(.72) contrast(1.05);
+      opacity: .8;
       z-index: 0;
     }
     .hero-veil {
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 70% 50% at 50% 30%, rgba(180,20,20,.06), transparent 65%),
-        linear-gradient(180deg, rgba(2,4,2,.10) 0%, rgba(2,4,2,.35) 60%, rgba(2,4,2,.75) 100%);
+        radial-gradient(ellipse 70% 50% at 50% 30%, rgba(47,155,255,.06), transparent 65%),
+        linear-gradient(180deg, rgba(8,11,16,.10) 0%, rgba(8,11,16,.35) 60%, rgba(8,11,16,.75) 100%);
       z-index: 1;
     }
     .hero-content {
@@ -167,9 +170,9 @@
       color: var(--gold);
       margin-bottom: 28px;
       padding: 5px 16px;
-      border: 1px solid rgba(184,40,40,.28);
+      border: 1px solid rgba(47,155,255,.28);
       border-radius: 20px;
-      background: rgba(184,40,40,.07);
+      background: rgba(47,155,255,.07);
     }
     .hero-eyebrow::before, .hero-eyebrow::after {
       content: '·';
@@ -181,7 +184,7 @@
       letter-spacing: .1em;
       line-height: 1.05;
       color: #f0f4f0;
-      text-shadow: 0 0 80px rgba(200,30,30,.2), 0 2px 8px rgba(0,0,0,.9);
+      text-shadow: 0 0 80px rgba(47,155,255,.2), 0 2px 8px rgba(0,0,0,.9);
       margin-bottom: 12px;
     }
     .hero-subtitle {
@@ -217,14 +220,14 @@
       color: #f0e8e0;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(184,40,40,.28), 0 8px 24px rgba(0,0,0,.4);
+      box-shadow: 0 0 40px rgba(47,155,255,.28), 0 8px 24px rgba(0,0,0,.4);
       transition: opacity .15s, transform .15s, box-shadow .15s;
     }
-    .btn-hero-primary:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 0 60px rgba(184,40,40,.38),0 12px 32px rgba(0,0,0,.5); }
+    .btn-hero-primary:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 0 60px rgba(47,155,255,.38),0 12px 32px rgba(0,0,0,.5); }
     .btn-hero-ghost {
       padding: 14px 34px;
       background: transparent;
-      border: 1px solid rgba(184,40,40,.38);
+      border: 1px solid rgba(47,155,255,.38);
       border-radius: 7px;
       font-family: var(--display);
       font-size: 14px;
@@ -233,7 +236,7 @@
       cursor: pointer;
       transition: background .15s, border-color .15s, transform .15s;
     }
-    .btn-hero-ghost:hover { background:rgba(184,40,40,.10); border-color:var(--gold); transform:translateY(-2px); }
+    .btn-hero-ghost:hover { background:rgba(47,155,255,.10); border-color:var(--gold); transform:translateY(-2px); }
     .hero-scroll {
       position: absolute;
       bottom: 36px;
@@ -267,7 +270,7 @@
       content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, rgba(184,40,40,.32), transparent);
+      background: linear-gradient(90deg, rgba(47,155,255,.32), transparent);
       max-width: 80px;
     }
     .section-title {
@@ -308,16 +311,16 @@
       padding: 20px;
       border: 1px solid var(--rule);
       border-radius: 8px;
-      background: rgba(184,40,40,.04);
+      background: rgba(47,155,255,.04);
       transition: border-color .2s, background .2s;
     }
-    .pillar:hover { border-color: rgba(184,40,40,.28); background: rgba(184,40,40,.07); }
+    .pillar:hover { border-color: rgba(47,155,255,.28); background: rgba(47,155,255,.07); }
     .pillar-icon {
       width: 42px; height: 42px;
       flex-shrink: 0;
       border-radius: 8px;
-      background: rgba(184,40,40,.10);
-      border: 1px solid rgba(184,40,40,.22);
+      background: rgba(47,155,255,.10);
+      border: 1px solid rgba(47,155,255,.22);
       display: flex; align-items: center; justify-content: center;
       font-size: 20px;
     }
@@ -366,7 +369,7 @@
       margin-bottom: 14px;
     }
     .badge-player { background: rgba(74,138,168,.15); border: 1px solid rgba(74,138,168,.35); color: #88bbd4; }
-    .badge-studio { background: rgba(184,40,40,.14); border: 1px solid rgba(184,40,40,.32); color: var(--gold); }
+    .badge-studio { background: rgba(47,155,255,.14); border: 1px solid rgba(47,155,255,.32); color: var(--gold); }
     .audience-title {
       font-family: var(--display);
       font-size: 24px;
@@ -402,7 +405,7 @@
       margin-top: 1px;
     }
     .dot-player { background: rgba(74,138,168,.15); color: #88bbd4; }
-    .dot-studio { background: rgba(184,40,40,.14); color: var(--gold); }
+    .dot-studio { background: rgba(47,155,255,.14); color: var(--gold); }
     .feature-text {
       font-size: 13px;
       color: var(--ink-dim);
@@ -439,11 +442,11 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(184,40,40,.22), transparent);
+      background: linear-gradient(90deg, transparent, rgba(47,155,255,.22), transparent);
       opacity: 0;
       transition: opacity .2s;
     }
-    .feat-card:hover { border-color: rgba(184,40,40,.28); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+    .feat-card:hover { border-color: rgba(47,155,255,.28); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
     .feat-card:hover::before { opacity: 1; }
     .feat-icon {
       width: 48px; height: 48px;
@@ -451,7 +454,7 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 22px;
       margin-bottom: 16px;
-      border: 1px solid rgba(184,40,40,.16);
+      border: 1px solid rgba(47,155,255,.16);
     }
     .feat-name {
       font-family: var(--display);
@@ -488,10 +491,10 @@
     .quote-block {
       margin: 48px 0;
       padding: 36px 40px;
-      border: 1px solid rgba(184,40,40,.22);
+      border: 1px solid rgba(47,155,255,.22);
       border-left: 3px solid var(--gold);
       border-radius: 0 8px 8px 0;
-      background: rgba(184,40,40,.05);
+      background: rgba(47,155,255,.05);
       text-align: left;
     }
     .quote-text {
@@ -545,7 +548,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(184,40,40,.08), transparent);
+      background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(47,155,255,.08), transparent);
       pointer-events: none;
     }
     .cta-title {
@@ -584,14 +587,14 @@
       color: #f0e8e0;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(184,40,40,.22), 0 8px 24px rgba(0,0,0,.4);
+      box-shadow: 0 0 40px rgba(47,155,255,.22), 0 8px 24px rgba(0,0,0,.4);
       transition: opacity .15s, transform .15s;
     }
     .btn-cta-primary:hover { opacity: .9; transform: translateY(-2px); }
     .btn-cta-ghost {
       padding: 16px 40px;
       background: transparent;
-      border: 1px solid rgba(184,40,40,.32);
+      border: 1px solid rgba(47,155,255,.32);
       border-radius: 7px;
       font-family: var(--display);
       font-size: 15px;
@@ -600,7 +603,7 @@
       cursor: pointer;
       transition: background .15s, border-color .15s;
     }
-    .btn-cta-ghost:hover { background: rgba(184,40,40,.08); border-color: var(--gold); }
+    .btn-cta-ghost:hover { background: rgba(47,155,255,.08); border-color: var(--gold); }
 
     /* ── Footer ─────────────────────────────────────── */
     footer {
@@ -641,7 +644,7 @@
     .ornament-divider {
       text-align: center;
       font-size: 18px;
-      color: rgba(184,40,40,.32);
+      color: rgba(47,155,255,.32);
       letter-spacing: .4em;
       margin: 0;
       padding: 24px 0;
@@ -699,7 +702,7 @@
     <div class="hero-scroll">
       <span>Scroll</span>
       <svg width="14" height="20" viewBox="0 0 14 20" fill="none">
-        <path d="M7 1v18M1 13l6 6 6-6" stroke="#e03838" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M7 1v18M1 13l6 6 6-6" stroke="#2f9bff" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
   </section>
@@ -853,10 +856,10 @@
           <span class="feat-tag" style="background:rgba(164,138,210,.1);color:var(--aether);border:1px solid rgba(164,138,210,.2)">Studio + Players</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(184,40,40,.11);border-color:rgba(184,40,40,.22)">⚡</div>
+          <div class="feat-icon" style="background:rgba(47,155,255,.11);border-color:rgba(47,155,255,.22)">⚡</div>
           <div class="feat-name">Sprite Forge</div>
           <div class="feat-desc">AI-generated sprite sheets for any character or unit. Athena writes the prompt from the character's own lore. Pixel art, anime, fantasy — your style.</div>
-          <span class="feat-tag" style="background:rgba(184,40,40,.11);color:var(--gold);border:1px solid rgba(184,40,40,.22)">AI-Powered</span>
+          <span class="feat-tag" style="background:rgba(47,155,255,.11);color:var(--gold);border:1px solid rgba(47,155,255,.22)">AI-Powered</span>
         </div>
         <div class="feat-card">
           <div class="feat-icon" style="background:rgba(122,154,82,.1);border-color:rgba(122,154,82,.2)">❦</div>
@@ -871,10 +874,10 @@
           <span class="feat-tag" style="background:rgba(74,138,168,.1);color:var(--tide);border:1px solid rgba(74,138,168,.2)">Studio + Players</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(184,40,40,.11);border-color:rgba(184,40,40,.22)">🦉</div>
+          <div class="feat-icon" style="background:rgba(47,155,255,.11);border-color:rgba(47,155,255,.22)">🦉</div>
           <div class="feat-name">Athena AI</div>
           <div class="feat-desc">A world-aware creative co-pilot that has memorised every element, faction, card, and rule in Abraxas. Ask anything — she knows the canon.</div>
-          <span class="feat-tag" style="background:rgba(184,40,40,.11);color:var(--gold);border:1px solid rgba(184,40,40,.22)">AI-Powered</span>
+          <span class="feat-tag" style="background:rgba(47,155,255,.11);color:var(--gold);border:1px solid rgba(47,155,255,.22)">AI-Powered</span>
         </div>
         <div class="feat-card">
           <div class="feat-icon" style="background:rgba(196,90,47,.1);border-color:rgba(196,90,47,.2)">❝</div>

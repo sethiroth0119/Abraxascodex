@@ -59,10 +59,11 @@ async function requireAuth() {
   document.body.dataset.viewer = window.IS_VIEWER ? 'true' : 'false';
 
   // Build the set of pages this role can see.
-  // Card Forge ('cards'), Monster Manual ('monsters'), and Campaign Creator
-  // ('campaignCreator') are open to all members — community design, voting,
-  // bestiary browsing, and story authoring.
-  const ALWAYS_ALLOWED = ['cards', 'monsters', 'campaignCreator'];
+  // Card Forge ('cards') is now STAFF/ADMIN ONLY — it edits the shared card
+  // catalog. The community browses + votes on those cards from Forge Hall
+  // (the dashboard) instead. Monster Manual and Campaign Creator stay open to
+  // all members (bestiary browsing + story authoring).
+  const ALWAYS_ALLOWED = ['monsters', 'campaignCreator'];
   const myPerms = allPerms.find(p => p.role === role);
   window.ALLOWED_PAGES = new Set(
     role === 'admin' ? ALL_PAGES :
