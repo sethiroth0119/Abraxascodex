@@ -67,7 +67,30 @@ function useCloudCards() {
 
   const reload = React.useCallback(async () => {
     try {
-      const list = await _fetchAll();
+      let list = await _fetchAll();
+      // One-time rescue: cards used to live in localStorage. If the shared pool
+      // is empty but this browser still holds pre-migration cards, push them up
+      // so nothing is lost. Guarded by a flag so intentionally-deleted cards can
+      // never resurrect (same trap as forge delete tombstones).
+      if (list.length === 0
+          && WRITE_ROLES.includes(window.CURRENT_ROLE)
+          && !localStorage.getItem('mss:cards_migrated')) {
+        const local = _lsRead();
+        if (local.length) {
+          try {
+            const uid = window.CURRENT_USER && window.CURRENT_USER.id;
+            const { error } = await window.supabaseClient.from('cards').upsert(
+              local.map(c => ({ id: c.id, data: c, created_by: uid, updated_by: uid })),
+              { onConflict: 'id' });
+            if (error) throw error;
+            localStorage.setItem('mss:cards_migrated', '1');
+            console.info('[cloud-cards] rescued ' + local.length + ' local cards into the shared catalog');
+            list = await _fetchAll();
+          } catch (e) { console.warn('[cloud-cards] local→cloud rescue failed:', e && e.message); }
+        } else {
+          localStorage.setItem('mss:cards_migrated', '1');
+        }
+      }
       apply(list);
       setSource('cloud');
     } catch (e) {
