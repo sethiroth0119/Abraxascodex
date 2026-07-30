@@ -164,7 +164,9 @@ const CardForge = () => {
   }, [cards, selectedId]);
 
   const selected = cards.find(c => c.id === selectedId);
-  const isStatCard = selected && (selected.type==='unit'||selected.type==='hero'||selected.type==='wall');
+  // Types that carry a full stat block (creatures / board presences).
+  const STAT_TYPES = ['unit','hero','wall','archon','fusion','assault','counterUnit','counterWall'];
+  const isStatCard = selected && STAT_TYPES.includes(selected.type);
 
   const createCard = () => {
     const id = 'c' + Date.now().toString(36);

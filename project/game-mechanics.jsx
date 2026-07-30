@@ -9,6 +9,15 @@ const CARD_TYPES = [
   { id:'location', name:'Location', icon:'🏛', desc:'Persistent field effect on a tile or zone.' },
   { id:'weather',  name:'Weather',  icon:'🌪', desc:'Global field effect, looped audio + aura.' },
   { id:'wall',     name:'Wall',     icon:'🧱', desc:'50 HP barrier; blocks movement and attacks.' },
+  { id:'counterSpell',    name:'Counter (Spell)',    icon:'🚫', desc:'Negates or counters an enemy Spell when triggered.' },
+  { id:'counterWall',     name:'Counter (Wall)',     icon:'🚧', desc:'Counters or neutralizes an enemy Wall.' },
+  { id:'counterLocation', name:'Counter (Location)', icon:'📍', desc:'Counters an enemy Location effect.' },
+  { id:'counterUnit',     name:'Counter (Unit)',     icon:'🔰', desc:'Counters an enemy Unit — locks or negates it.' },
+  { id:'counterTrap',     name:'Counter (Trap)',     icon:'🪤', desc:'Counters an enemy Trap before it resolves.' },
+  { id:'enchantment',     name:'Enchantment',        icon:'🔮', desc:'Persistent aura attached to a card, unit, or tile.' },
+  { id:'assault',         name:'Assault',            icon:'💥', desc:'Aggressive strike card built for high-tempo offense.' },
+  { id:'archon',          name:'Archon',             icon:'🌠', desc:'Ascended apex form. A powerful unit with a full stat block.' },
+  { id:'fusion',          name:'Fusion',             icon:'🧬', desc:'Combined form fused from other cards. Has a stat block.' },
 ];
 
 const STAT_KEYS = [
