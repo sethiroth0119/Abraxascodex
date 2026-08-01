@@ -342,3 +342,24 @@ const MSBProfilePage = () => {
 };
 
 window.MSBProfilePage = MSBProfilePage;
+
+// ── Shared helpers so other Codex features (Bug Tracker bounties) can use the
+//    connected Mythic Spellbook session without re-implementing it. ──────────
+window.msbGetClient = msbClient;
+(function _mirrorSession() {
+  const c = msbClient(); if (!c) return;
+  c.auth.getSession().then(({ data }) => { window.__msbSession = data.session || null; });
+  try { c.auth.onAuthStateChange((_e, s) => { window.__msbSession = s || null; }); } catch (e) {}
+})();
+window.msbIdentity = () => {
+  const s = window.__msbSession;
+  return s ? { userId: s.user.id, email: s.user.email } : null;
+};
+// Credit a player's in-game Cinder (gems). Admin-gated server-side by the RPC.
+window.msbAwardCinder = async (userId, amount, reason) => {
+  const c = msbClient(); if (!c) throw new Error('Mythic Spellbook not connected');
+  const { data, error } = await c.rpc('msb_award_cinder',
+    { p_user_id: userId, p_amount: amount, p_reason: reason || 'Bug bounty' });
+  if (error) throw error;
+  return data;
+};

@@ -65,6 +65,26 @@ const BugsPage = () => {
 
   const open = bugs.find(b => b.id === openId);
 
+  // Connected Mythic Spellbook (game) identity — used to attribute reports to a
+  // player account and to pay Cinder bounties. Reactive to connect/disconnect.
+  const [msbId, setMsbId] = React.useState(window.msbIdentity ? window.msbIdentity() : null);
+  React.useEffect(() => {
+    const c = window.msbGetClient && window.msbGetClient();
+    if (!c) return;
+    const upd = (s) => setMsbId(s ? { userId: s.user.id, email: s.user.email } : null);
+    c.auth.getSession().then(({ data }) => upd(data.session));
+    let sub;
+    try { sub = c.auth.onAuthStateChange((_e, s) => upd(s)).data; } catch (e) {}
+    return () => { try { sub && sub.subscription && sub.subscription.unsubscribe(); } catch (e) {} };
+  }, []);
+  const isAdmin = (window.CURRENT_ROLE === 'admin');
+
+  // Bug-bounty award state
+  const [awardAmt, setAwardAmt] = React.useState(100);
+  const [awardBusy, setAwardBusy] = React.useState(false);
+  const [awardMsg, setAwardMsg] = React.useState('');
+  React.useEffect(() => { setAwardMsg(''); }, [openId]);
+
   const submitBug = () => {
     if(!draft.title.trim()) return;
     const id = 'bug-' + Date.now().toString(36);
@@ -87,6 +107,9 @@ const BugsPage = () => {
       responses: [],
       votes: [],
       attachmentSlot: draftSlotId, // link to image-slot uploaded during the modal
+      // Mythic Spellbook account (if connected) so the reporter can be paid a bounty.
+      msbUserId: msbId && msbId.userId,
+      msbEmail:  msbId && msbId.email,
     };
     setBugs([b, ...bugs]);
     setReportModal(false);
@@ -116,6 +139,32 @@ const BugsPage = () => {
     const b = bugs.find(x=>x.id===id);
     const votes = b.votes || [];
     update(id, { votes: votes.includes(me) ? votes.filter(v=>v!==me) : [...votes, me] });
+  };
+
+  // Pay a Cinder bounty to the reporter's Mythic Spellbook account. The RPC is
+  // admin-gated server-side; the reporter must have filed while MSB-connected.
+  const awardCinder = async (bug) => {
+    if (!bug || !bug.msbUserId || !window.msbAwardCinder) return;
+    const amt = Math.max(0, Math.floor(Number(awardAmt) || 0));
+    if (!amt) { setAwardMsg('Enter a Cinder amount first.'); return; }
+    setAwardBusy(true); setAwardMsg('');
+    try {
+      const res = await window.msbAwardCinder(bug.msbUserId, amt, `Bug bounty: ${bug.title}`);
+      const prev = bug.reward && bug.reward.total || 0;
+      update(bug.id, { reward: {
+        total: prev + amt, currency: 'cinder', at: Date.now(),
+        by: (msbId && msbId.email) || me, newBalance: res && res.new_balance,
+      } });
+      setAwardMsg('✓ Awarded ' + amt.toLocaleString() + ' Cinder'
+        + (res && res.new_balance != null ? ' · their balance is now ' + Number(res.new_balance).toLocaleString() : ''));
+    } catch (e) {
+      const m = String(e && e.message || e);
+      setAwardMsg(
+        /not authorized/i.test(m) ? 'Only game admins (connected via Gaming Profiles) can pay bounties.'
+        : /function|does not exist|schema cache/i.test(m) ? 'Run supabase-msb-bug-bounty.sql in the game database first.'
+        : /not connected/i.test(m) ? 'Connect your Mythic Spellbook admin account in Gaming Profiles first.'
+        : m);
+    } finally { setAwardBusy(false); }
   };
 
   const filtered = bugs.filter(b =>
@@ -281,6 +330,39 @@ const BugsPage = () => {
                     <button className="btn" onClick={()=>remove(open.id)} style={{color:'var(--ember)',marginLeft:'auto'}}>✕ Delete</button>
                   </div>
 
+                  {/* Bug Bounty — reward the reporter's Mythic Spellbook account with Cinder */}
+                  <div style={{marginBottom:14,padding:12,borderRadius:6,border:'1px solid var(--rule)',background:'rgba(47,155,255,.05)'}}>
+                    <div className="field-label" style={{marginBottom:6}}>🔥 Bug Bounty</div>
+                    {open.reward && open.reward.total ? (
+                      <div style={{fontSize:13,color:'var(--verdant)',marginBottom:8}}>
+                        Paid <b>{Number(open.reward.total).toLocaleString()} Cinder</b> to this reporter
+                        {open.reward.by ? <span style={{color:'var(--ink-faint)'}}> · by {open.reward.by}</span> : null}
+                      </div>
+                    ) : null}
+                    {!open.msbUserId ? (
+                      <div style={{fontSize:12,color:'var(--ink-faint)',fontStyle:'italic'}}>
+                        Not linked to a Mythic Spellbook account, so it can’t be rewarded. Reporters must file while connected in Gaming Profiles.
+                      </div>
+                    ) : isAdmin ? (
+                      <>
+                        <div style={{fontSize:11,color:'var(--ink-faint)',marginBottom:8}}>Reporter: {open.msbEmail || open.msbUserId}</div>
+                        <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
+                          {[50,100,250,500].map(v=>(
+                            <button key={v} className="btn" style={{padding:'4px 10px',fontSize:12}} onClick={()=>setAwardAmt(v)}>{v}</button>
+                          ))}
+                          <input className="field-input" type="number" min="1" value={awardAmt}
+                            onChange={e=>setAwardAmt(e.target.value)} style={{width:88}}/>
+                          <button className="btn btn-primary" disabled={awardBusy} onClick={()=>awardCinder(open)}>
+                            {awardBusy ? 'Paying…' : '🔥 Award Cinder'}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{fontSize:12,color:'var(--ink-faint)',fontStyle:'italic'}}>Admins can pay a Cinder bounty for this report.</div>
+                    )}
+                    {awardMsg && <div style={{fontSize:12,marginTop:8,color:/✓/.test(awardMsg)?'var(--verdant)':'var(--ember)'}}>{awardMsg}</div>}
+                  </div>
+
                   <div className="field" style={{margin:0,marginBottom:12}}>
                     <label className="field-label">Description</label>
                     <textarea className="field-area" rows="3" value={open.description||''} onChange={e=>update(open.id,{description:e.target.value})}/>
@@ -372,6 +454,16 @@ const BugsPage = () => {
                 <div style={{fontFamily:'var(--serif)',fontStyle:'italic',color:'var(--ink-dim)',fontSize:13,marginTop:4}}>
                   The more detail you can share, the faster we can fix it.
                 </div>
+              </div>
+
+              {/* Reward eligibility — tie the report to a Mythic Spellbook account */}
+              <div style={{marginBottom:16,padding:'10px 14px',borderRadius:6,fontSize:12.5,lineHeight:1.5,
+                border:'1px solid var(--rule)',
+                background: msbId ? 'rgba(63,185,80,.08)' : 'rgba(47,155,255,.06)',
+                color: msbId ? 'var(--verdant)' : 'var(--ink-dim)'}}>
+                {msbId
+                  ? <>✓ Filing as your Mythic Spellbook account (<b>{msbId.email}</b>) — eligible for Cinder bug bounties.</>
+                  : <>💡 Connect your Mythic Spellbook account in <b>Gaming Profiles</b> before filing to be eligible for Cinder rewards.</>}
               </div>
 
               <div className="field">
