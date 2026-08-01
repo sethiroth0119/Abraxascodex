@@ -417,6 +417,24 @@ window.msbIdentity = () => {
   const s = window.__msbSession;
   return s ? { userId: s.user.id, email: s.user.email } : null;
 };
+// The signed-in Codex user's OWN game profile (matched by email through the
+// server proxy). Returns the parsed profile object, or null. Reused by the
+// social profile card so it can show game stats.
+window.msbMyGameProfile = async () => {
+  try {
+    const { data: sess } = await window.supabaseClient.auth.getSession();
+    const token = sess && sess.session && sess.session.access_token;
+    if (!token) return null;
+    const r = await fetch('/api/msb-profile', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) return null;
+    const out = await r.json();
+    const row = out && out.profile;
+    if (!row) return null;
+    const p = typeof row === 'string' ? JSON.parse(row) : row;
+    return parseProfile(p, p.mt);
+  } catch (e) { return null; }
+};
+
 // Credit a player's in-game Cinder (gems). Admin-gated server-side by the RPC.
 window.msbAwardCinder = async (userId, amount, reason) => {
   const c = msbClient(); if (!c) throw new Error('Mythic Spellbook not connected');
