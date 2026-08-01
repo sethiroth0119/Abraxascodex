@@ -62,6 +62,28 @@ const ProfilePage = ({ onClose }) => {
     finally { setSaving(false); }
   };
 
+  // Inline "Connect Mythic Spellbook" — a direct game login that reads your own
+  // account data under your session (no worker/secret dependency).
+  const [ce, setCe] = React.useState(user.email || '');
+  const [cp, setCp] = React.useState('');
+  const [cBusy, setCBusy] = React.useState(false);
+  const [cErr, setCErr] = React.useState('');
+  const connectGame = async () => {
+    const c = window.msbGetClient && window.msbGetClient();
+    if (!c) { setCErr('Game connection unavailable.'); return; }
+    if (!ce.trim() || !cp) { setCErr('Enter your Mythic Spellbook email and password.'); return; }
+    setCBusy(true); setCErr('');
+    try {
+      const { error } = await c.auth.signInWithPassword({ email: ce.trim(), password: cp });
+      if (error) { setCErr(error.message); return; }
+      setCp('');
+      const g = await window.msbMyGameProfile();
+      setGame(g || null);
+      if (!g) setCErr('Signed in, but no game profile found for this account.');
+    } catch (e) { setCErr(String(e.message || e)); }
+    finally { setCBusy(false); }
+  };
+
   const roleColor = ROLE_COLOR[role] || '#888';
   const display   = name || (user.email || 'Unknown Keeper');
   const handle    = (user.email || '').split('@')[0] || 'keeper';
@@ -168,9 +190,21 @@ const ProfilePage = ({ onClose }) => {
             </div>
           )}
           {game === null && (
-            <div style={{ marginTop:18, padding:'12px 14px', border:'1px dashed var(--rule)', borderRadius:10,
-              fontSize:12, color:'var(--ink-faint)', fontStyle:'italic' }}>
-              No Mythic Spellbook account matched to this email yet — connect it in <b style={{ color:'var(--ink-dim)' }}>Gaming Profiles</b> to show your Cinder, wins, and top unit here.
+            <div style={{ marginTop:18, padding:'16px', border:'1px solid var(--rule)', borderRadius:10,
+              background:'rgba(47,155,255,.05)' }}>
+              <div style={{ fontFamily:'var(--display)', fontSize:14, color:'var(--ink)', marginBottom:4 }}>🎴 Connect your Mythic Spellbook account</div>
+              <div style={{ fontSize:12, color:'var(--ink-faint)', marginBottom:12, lineHeight:1.5 }}>
+                Sign in with your game login to show your Cinder, Aza Coin, Mythic Token, wins, and strongest unit right here.
+              </div>
+              <div style={{ display:'grid', gap:8 }}>
+                <input className="field-input" type="email" value={ce} onChange={e=>setCe(e.target.value)} placeholder="Mythic Spellbook email" />
+                <input className="field-input" type="password" value={cp} onChange={e=>setCp(e.target.value)} placeholder="Mythic Spellbook password"
+                  onKeyDown={e=>{ if(e.key==='Enter') connectGame(); }} />
+                {cErr && <div style={{ color:'var(--ember)', fontSize:12 }}>{cErr}</div>}
+                <button className="btn btn-primary" disabled={cBusy} onClick={connectGame} style={{ justifySelf:'start' }}>
+                  {cBusy ? 'Connecting…' : 'Connect Mythic Spellbook'}
+                </button>
+              </div>
             </div>
           )}
 

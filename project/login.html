@@ -280,6 +280,27 @@
           </div>
           <button class="btn-primary" id="su-btn" onclick="signUp()">Create Account</button>
         </div>
+
+        <!-- Connect a Mythic Spellbook game account -->
+        <div id="mg-section" style="margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08)">
+          <div onclick="toggleMg()" style="cursor:pointer; font-size:13px; color:#63b8ff; text-align:center; user-select:none">
+            🎴 Log in with your Mythic Spellbook game account
+          </div>
+          <div id="mg-form" style="display:none; margin-top:12px">
+            <div class="field">
+              <label>Mythic Spellbook Email</label>
+              <input type="email" id="mg-email" placeholder="game@email.com" autocomplete="email"/>
+            </div>
+            <div class="field">
+              <label>Mythic Spellbook Password</label>
+              <input type="password" id="mg-password" placeholder="••••••••" autocomplete="current-password"/>
+            </div>
+            <button class="btn-primary" id="mg-btn" onclick="connectGame()">Connect Mythic Spellbook</button>
+            <div style="font-size:11px; color:#5f7183; margin-top:8px; text-align:center; line-height:1.5">
+              Links your game stats (Cinder, wins, top unit) to your Codex profile. You still sign in to the Codex above.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -297,6 +318,35 @@
     supabaseClient.auth.getSession().then(({ data }) => {
       if (data.session) window.location.href = '/Mythic%20Spellbook%20Studio.html';
     });
+
+    // ── Mythic Spellbook game account connect ──────────────────────────────
+    // A SECOND Supabase client (the game project). storageKey 'msb-game-auth'
+    // matches the studio's game client, so the session carries into the profile.
+    const MSB_GAME_URL  = 'https://ktsiasyjusesawtrwrjc.supabase.co';
+    const MSB_GAME_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0c2lhc3lqdXNlc2F3dHJ3cmpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDU5MjgsImV4cCI6MjA5NDIyMTkyOH0.fYpQFCs03ZE5AIv88S_GStqp7g71sTQe9yUxmXgyKQo';
+    let _mgClient = null;
+    function mgClient() {
+      if (_mgClient) return _mgClient;
+      _mgClient = window.supabase.createClient(MSB_GAME_URL, MSB_GAME_ANON,
+        { auth: { storageKey: 'msb-game-auth', persistSession: true, autoRefreshToken: true } });
+      return _mgClient;
+    }
+    function toggleMg() {
+      const f = document.getElementById('mg-form');
+      f.style.display = (f.style.display === 'none' || !f.style.display) ? 'block' : 'none';
+    }
+    async function connectGame() {
+      const email = document.getElementById('mg-email').value.trim();
+      const pass  = document.getElementById('mg-password').value;
+      if (!email || !pass) { showMsg('Enter your Mythic Spellbook email and password.', 'error'); return; }
+      setBusy('mg-btn', true);
+      try {
+        const { error } = await mgClient().auth.signInWithPassword({ email, password: pass });
+        if (error) { showMsg(error.message, 'error'); return; }
+        showMsg('✓ Mythic Spellbook connected — your game stats will appear on your Codex profile.', 'success');
+      } catch (e) { showMsg((e && e.message) || 'Could not connect.', 'error'); }
+      finally { setBusy('mg-btn', false); }
+    }
 
     let currentTab = 'signin';
 

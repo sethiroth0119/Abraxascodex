@@ -422,6 +422,17 @@ window.msbIdentity = () => {
 // social profile card so it can show game stats.
 window.msbMyGameProfile = async () => {
   try {
+    // 1. If a real game session is connected, read the player's own row directly
+    //    (own-row RLS) — reliable, no worker/secret needed.
+    const c = msbClient();
+    if (c) {
+      const { data: gs } = await c.auth.getSession();
+      if (gs && gs.session) {
+        const p = await fetchProfileByUserId(c, gs.session.user.id);
+        if (p) return p;
+      }
+    }
+    // 2. Otherwise auto-match by the Codex login email via the server proxy.
     const { data: sess } = await window.supabaseClient.auth.getSession();
     const token = sess && sess.session && sess.session.access_token;
     if (!token) return null;
