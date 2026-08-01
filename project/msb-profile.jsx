@@ -85,6 +85,18 @@ async function fetchPublicProfile(client, userId) {
   return parseProfile(row, row.mt);
 }
 
+// Look up a game account by EMAIL (e.g. the Codex login email) → public profile,
+// so a player whose game email matches their Codex email sees their stats
+// automatically, with no separate game login. Needs the game-DB SQL.
+async function fetchProfileByEmail(client, email) {
+  if (!email) return null;
+  const { data, error } = await client.rpc('msb_profile_by_email', { p_email: email });
+  if (error) throw error;
+  if (!data) return null;
+  const row = typeof data === 'string' ? JSON.parse(data) : data;
+  return parseProfile(row, row.mt);
+}
+
 // Resolve card ids → display names from card_catalog (best-effort; falls back to id).
 async function fetchCardNames(client, ids) {
   const uniq = [...new Set(ids.filter(Boolean))].slice(0, 200);
@@ -199,8 +211,13 @@ const MSBProfilePage = () => {
   const [authErr, setAuthErr] = React.useState('');
   const [busy, setBusy] = React.useState(false);
 
+  // The Codex login's email — used to auto-match the game account by email.
+  const codexEmail = (window.CURRENT_USER && window.CURRENT_USER.email)
+                  || (window.CURRENT_PROFILE && window.CURRENT_PROFILE.email) || '';
+  const [showConnect, setShowConnect] = React.useState(false);
+
   const [tab, setTab] = React.useState('me');       // 'me' | 'browse'
-  const [me, setMe] = React.useState(null);
+  const [me, setMe] = React.useState(undefined);    // undefined=loading, null=no account, obj=found
   const [meNames, setMeNames] = React.useState({});
   const [loadErr, setLoadErr] = React.useState('');
 
@@ -221,23 +238,34 @@ const MSBProfilePage = () => {
     return () => { alive = false; sub && sub.subscription && sub.subscription.unsubscribe(); };
   }, []);
 
-  // Load MY profile once signed in.
+  // Load MY profile: prefer a real game session; otherwise auto-match by the
+  // Codex login email. Runs once the session check settles.
   React.useEffect(() => {
-    if (!session || !client) return;
+    if (!client || checking) return;
+    if (!session && !codexEmail) { setMe(null); return; }
     let alive = true;
     (async () => {
       try {
-        const data = await fetchProfileByUserId(client, session.user.id);
+        setLoadErr('');
+        const data = session
+          ? await fetchProfileByUserId(client, session.user.id)
+          : await fetchProfileByEmail(client, codexEmail);
         if (!alive) return;
-        setMe(data);
+        setMe(data);   // obj if found, null if no matching game account
         if (data) {
           const ids = [...(data.topDeck ? data.topDeck.cards : []), ...data.topByKills.map(u => u.id), data.strongest && data.strongest.id];
           setMeNames(await fetchCardNames(client, ids));
         }
-      } catch (e) { if (alive) setLoadErr(String(e.message || e)); }
+      } catch (e) {
+        if (!alive) return;
+        setMe(null);
+        setLoadErr(/function|does not exist|schema cache/i.test(String(e.message || e))
+          ? 'Email matching isn’t enabled yet — run supabase-msb-email-link.sql in the game database.'
+          : String(e.message || e));
+      }
     })();
     return () => { alive = false; };
-  }, [session]);
+  }, [session, codexEmail, checking]);
 
   const signIn = async () => {
     if (!client) { setAuthErr('Sign-in unavailable (Supabase not loaded).'); return; }
@@ -278,24 +306,30 @@ const MSBProfilePage = () => {
   // ── render ────────────────────────────────────────────────────────────
   if (checking) return <div className="page"><div className="panel" style={{ padding: 40, textAlign: 'center', color: 'var(--ink-faint)' }}>Checking Mythic Spellbook session…</div></div>;
 
-  if (!session) {
+  const identityEmail = (session && session.user.email) || codexEmail;
+
+  const connectPanel = (
+    <div className="panel"><div className="panel-body" style={{ display: 'grid', gap: 12 }}>
+      <p className="section-body" style={{ marginBottom: 6 }}>
+        Connect your <b>Mythic Spellbook</b> game login. Viewing your own stats works automatically from your Codex email — a game login is only needed to award bug bounties, or if your game email differs from your Codex email.
+      </p>
+      <div className="field"><label className="field-label">Email</label>
+        <input className="field-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={codexEmail || 'you@example.com'} /></div>
+      <div className="field"><label className="field-label">Password</label>
+        <input className="field-input" type="password" value={pass} onChange={e => setPass(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') signIn(); }} placeholder="••••••••" /></div>
+      {authErr && <div style={{ color: 'var(--ember)', fontSize: 13 }}>{authErr}</div>}
+      <button className="btn btn-primary" disabled={busy} onClick={signIn}>{busy ? 'Connecting…' : 'Connect game login'}</button>
+    </div></div>
+  );
+
+  // No email at all to match on → just the connect form.
+  if (!identityEmail) {
     return (
       <div className="page" style={{ maxWidth: 520 }}>
         <div className="page-head"><div><h1 className="page-title"><span className="ornament">🎴</span>Gaming Profiles</h1>
           <div className="page-sub">Connect your Mythic Spellbook account</div></div></div>
-        <div className="panel"><div className="panel-body" style={{ display: 'grid', gap: 12 }}>
-          <p className="section-body" style={{ marginBottom: 6 }}>
-            Sign in with your <b>Mythic Spellbook</b> game account to see your Cinder, Aza Coin, and Mythic Token, your top deck, your strongest unit, and your win record — and to browse other players.
-          </p>
-          <div className="field"><label className="field-label">Email</label>
-            <input className="field-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></div>
-          <div className="field"><label className="field-label">Password</label>
-            <input className="field-input" type="password" value={pass} onChange={e => setPass(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') signIn(); }} placeholder="••••••••" /></div>
-          {authErr && <div style={{ color: 'var(--ember)', fontSize: 13 }}>{authErr}</div>}
-          <button className="btn btn-primary" disabled={busy} onClick={signIn}>{busy ? 'Connecting…' : 'Connect Mythic Spellbook'}</button>
-          <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>Your game login is stored only in this browser and is separate from your Codex login.</div>
-        </div></div>
+        {connectPanel}
       </div>
     );
   }
@@ -304,17 +338,28 @@ const MSBProfilePage = () => {
     <div className="page">
       <div className="page-head">
         <div><h1 className="page-title"><span className="ornament">🎴</span>Gaming Profiles</h1>
-          <div className="page-sub">Signed in as {session.user.email}</div></div>
+          <div className="page-sub">{session ? `Signed in as ${session.user.email}` : `Matched to your Codex email · ${codexEmail}`}</div></div>
         <div className="page-actions">
           <button className={`btn ${tab === 'me' ? 'btn-primary' : ''}`} onClick={() => setTab('me')}>My Profile</button>
           <button className={`btn ${tab === 'browse' ? 'btn-primary' : ''}`} onClick={() => setTab('browse')}>Browse Players</button>
-          <button className="btn btn-ghost" onClick={signOut}>Disconnect</button>
+          {session
+            ? <button className="btn btn-ghost" onClick={signOut}>Disconnect</button>
+            : <button className="btn btn-ghost" onClick={() => setShowConnect(v => !v)}>Connect game login</button>}
         </div>
       </div>
 
-      {tab === 'me' && (loadErr
-        ? <div className="panel" style={{ padding: 24, color: 'var(--ember)' }}>Could not load profile: {loadErr}</div>
-        : <ProfileView data={me} cardNames={meNames} />)}
+      {!session && showConnect && connectPanel}
+
+      {tab === 'me' && (
+        loadErr
+          ? <div className="panel" style={{ padding: 24, color: 'var(--ember)' }}>Could not load profile: {loadErr}</div>
+          : me === undefined
+            ? <div className="panel" style={{ padding: 40, textAlign: 'center', color: 'var(--ink-faint)' }}>Loading your game profile…</div>
+            : me === null
+              ? <div className="panel" style={{ padding: 40, textAlign: 'center', color: 'var(--ink-dim)', fontStyle: 'italic' }}>
+                  No Mythic Spellbook account found for <b>{codexEmail}</b>. If your game email is different, use “Connect game login” above.
+                </div>
+              : <ProfileView data={me} cardNames={meNames} />)}
 
       {tab === 'browse' && (
         <div style={{ display: 'grid', gap: 16 }}>
