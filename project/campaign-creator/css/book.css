@@ -141,6 +141,7 @@ body{
 .leaf{
   position:absolute; top:0; width:var(--pageW); height:var(--pageH);
   z-index:30; pointer-events:none; transform-style:preserve-3d;
+  will-change:transform;   /* promote to its own GPU layer for a jank-free lift */
 }
 .leaf.fwd{ left:50%; transform-origin:left center; }
 .leaf.bwd{ left:0;   transform-origin:right center; }
@@ -156,19 +157,17 @@ body{
 
 .leaf-rot{
   position:absolute; inset:0; transform-style:preserve-3d;
-  transition:transform var(--flipMs,1150ms) cubic-bezier(.42,.02,.28,1);
+  transition:transform var(--flipMs,1150ms) cubic-bezier(.32,.06,.22,1);
+  will-change:transform;   /* GPU-composited rotation */
 }
 .leaf.fwd .leaf-rot{ transform-origin:left center;  transform:rotateY(0deg); }
 .leaf.fwd.go .leaf-rot{ transform:rotateY(-180deg); }
 .leaf.bwd .leaf-rot{ transform-origin:right center; transform:rotateY(0deg); }
 .leaf.bwd.go .leaf-rot{ transform:rotateY(180deg); }
-/* airborne drop-shadow, peaking at the top of the arc */
-.leaf.go .leaf-rot{ animation:leafDrop var(--flipMs,1150ms) ease-in-out; }
-@keyframes leafDrop{
-  0%{ filter:drop-shadow(0 6px 9px rgba(0,0,0,0)); }
-  50%{ filter:drop-shadow(0 34px 36px rgba(0,0,0,.42)); }
-  100%{ filter:drop-shadow(0 6px 9px rgba(0,0,0,0)); }
-}
+/* NOTE: the old airborne shadow animated `filter:drop-shadow` on this rotating
+   3D leaf every frame — the single biggest source of flip jank (the browser
+   re-rasterizes a blurred, alpha-shaped shadow ~60×/s). Depth is now carried by
+   the GPU-cheap, opacity-only `.turn-shadow` below, so the turn stays smooth. */
 
 .leaf-face{
   position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
@@ -209,12 +208,13 @@ body{
 /* soft shadow the lifting page throws across the spread beneath */
 .turn-shadow{
   position:absolute; top:-2%; height:104%; width:var(--pageW); z-index:20; pointer-events:none;
-  opacity:0; background:linear-gradient(90deg, rgba(14,7,2,.5) 0%, rgba(14,7,2,.18) 28%, rgba(14,7,2,0) 66%);
+  opacity:0; will-change:opacity;
+  background:linear-gradient(90deg, rgba(14,7,2,.58) 0%, rgba(14,7,2,.22) 30%, rgba(14,7,2,0) 68%);
 }
 .turn-shadow.fwd{ left:50%; }
 .turn-shadow.bwd{ left:0; transform:scaleX(-1); }
 .turn-shadow.go{ animation:castShadow var(--flipMs,1150ms) ease-in-out; }
-@keyframes castShadow{ 0%{opacity:0;} 16%{opacity:.62;} 50%{opacity:.4;} 82%{opacity:.12;} 100%{opacity:0;} }
+@keyframes castShadow{ 0%{opacity:0;} 16%{opacity:.74;} 50%{opacity:.52;} 82%{opacity:.18;} 100%{opacity:0;} }
 
 /* ── corner peel hint ──────────────────────────────────────────────── */
 .peel{

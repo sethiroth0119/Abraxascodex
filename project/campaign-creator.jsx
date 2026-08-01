@@ -28,7 +28,7 @@ const CampaignCreator = () => {
     <div style={{position:'absolute', inset:0}}>
       <iframe
         ref={iframeRef}
-        src="/campaign-creator/index.html"
+        src="/campaign-creator/index.html?v=2"
         title="Campaign Creator — Mythic Spellbook Stories"
         loading="eager"
         allow="fullscreen"
