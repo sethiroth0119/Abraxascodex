@@ -16,7 +16,7 @@ const ALL_PAGES = [
   'heroes','lineage','monsters',
   'threads','tasks','ideas','concepts','dialogue','bugs',
   'campaigns','campaignCreator','worldEvents','resources','economy','relics',
-  'playtest','activity','settings','users','sprites','live',
+  'playtest','activity','settings','users','sprites','live','players',
 ];
 
 async function requireAuth() {
@@ -63,7 +63,7 @@ async function requireAuth() {
   // catalog. The community browses + votes on those cards from Forge Hall
   // (the dashboard) instead. Monster Manual and Campaign Creator stay open to
   // all members (bestiary browsing + story authoring).
-  const ALWAYS_ALLOWED = ['monsters', 'campaignCreator'];
+  const ALWAYS_ALLOWED = ['monsters', 'campaignCreator', 'players'];
   const myPerms = allPerms.find(p => p.role === role);
   window.ALLOWED_PAGES = new Set(
     role === 'admin' ? ALL_PAGES :

@@ -136,6 +136,7 @@ const App = () => {
       case 'sprites':   return <SpriteForge/>;
       case 'users':     return <UsersAdminPage/>;
       case 'live':      return <LiveDataPage/>;
+      case 'players':   return window.MSBProfilePage ? <window.MSBProfilePage/> : null;
       case 'profile':   return null; // handled as overlay
       default: return <Dashboard setRoute={setRoute}/>;;
     }
@@ -206,7 +207,7 @@ const App = () => {
         </div>
         <div className="enginetabs">
           {window.NAV.flatMap(g => g.items)
-            .filter(i => ['dashboard','cards','heroes','lore','elements','factions','timeline','monsters','sprites','live'].includes(i.id))
+            .filter(i => ['dashboard','cards','heroes','lore','elements','factions','timeline','monsters','players','sprites','live'].includes(i.id))
             .filter(i => !allowedPages || allowedPages.has(i.id))
             .map(i => (
               <button key={i.id} className={`etab ${route === i.id ? 'active' : ''}`}
