@@ -7,6 +7,7 @@ export default {
 
     if (url.pathname === '/api/claude' && request.method === 'POST') return handleClaude(request, env);
     if (url.pathname === '/api/sprite' && request.method === 'POST') return handleSprite(request, env);
+    if (url.pathname === '/api/msb-profile' && request.method === 'POST') return handleMsbProfile(request, env);
 
     if (url.pathname === '/' || url.pathname === '') {
       return env.ASSETS.fetch(new Request(new URL('/index.html', url.origin), request));
@@ -129,6 +130,50 @@ async function handleSprite(request, env) {
   } catch (err) {
     return json({ error: err.message }, 500);
   }
+}
+
+// Gaming Profiles email match — LOCKED DOWN.
+// The client sends the caller's Codex access token (no email). We verify it
+// against the Codex Supabase to get the *real* email, then look that email up in
+// the GAME database with the service key. This means email lookups can't be
+// enumerated with the public key — you can only ever fetch your own profile.
+const CODEX_URL  = 'https://uvfhiqwvpixfobjnyqtf.supabase.co';
+const CODEX_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2ZmhpcXd2cGl4Zm9iam55cXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTk2MzUsImV4cCI6MjA5NDY5NTYzNX0.rKWgWGuGJsaW_vn1J1_GnV0ayz91ctnEhsu57f06JtI';
+const GAME_URL   = 'https://ktsiasyjusesawtrwrjc.supabase.co';
+
+async function handleMsbProfile(request, env) {
+  const auth = request.headers.get('Authorization') || '';
+  const token = auth.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return json({ error: 'Not signed in' }, 401);
+
+  // 1. Verify the Codex session and read the caller's real email.
+  let email;
+  try {
+    const r = await fetch(CODEX_URL + '/auth/v1/user', {
+      headers: { apikey: CODEX_ANON, Authorization: 'Bearer ' + token },
+    });
+    if (!r.ok) return json({ error: 'Invalid session' }, 401);
+    const u = await r.json();
+    email = u && u.email;
+  } catch (e) { return json({ error: 'Auth check failed' }, 502); }
+  if (!email) return json({ error: 'No email on session' }, 400);
+
+  // 2. Look up that verified email in the game DB with the service key.
+  if (!env.GAME_SERVICE_KEY) return json({ error: 'GAME_SERVICE_KEY not set on the worker' }, 503);
+  try {
+    const r = await fetch(GAME_URL + '/rest/v1/rpc/msb_profile_by_email', {
+      method: 'POST',
+      headers: {
+        apikey: env.GAME_SERVICE_KEY,
+        Authorization: 'Bearer ' + env.GAME_SERVICE_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_email: email }),
+    });
+    const data = await r.json().catch(() => null);
+    if (!r.ok) return json({ error: (data && data.message) || ('lookup failed ' + r.status) }, r.status);
+    return json({ profile: data }); // profile json, or null if no game account
+  } catch (e) { return json({ error: e.message || 'lookup error' }, 500); }
 }
 
 function json(data, status = 200) {

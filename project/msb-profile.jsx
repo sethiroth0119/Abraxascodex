@@ -85,10 +85,27 @@ async function fetchPublicProfile(client, userId) {
   return parseProfile(row, row.mt);
 }
 
-// Look up a game account by EMAIL (e.g. the Codex login email) → public profile,
-// so a player whose game email matches their Codex email sees their stats
-// automatically, with no separate game login. Needs the game-DB SQL.
+// Look up the caller's OWN game account by email. Routed through the Codex
+// server (/api/msb-profile), which verifies the signed-in Codex session and
+// derives the email server-side — so emails can't be enumerated with the public
+// key. Falls back to the direct RPC only during setup (before the worker secret
+// + revoke are in place), so the transition never breaks the page.
 async function fetchProfileByEmail(client, email) {
+  try {
+    const { data: sess } = await window.supabaseClient.auth.getSession();
+    const token = sess && sess.session && sess.session.access_token;
+    if (token) {
+      const r = await fetch('/api/msb-profile', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+      if (r.ok) {
+        const out = await r.json();
+        const row = out && out.profile;
+        if (!row) return null;
+        const p = typeof row === 'string' ? JSON.parse(row) : row;
+        return parseProfile(p, p.mt);
+      }
+      // Non-OK (e.g. 503 before the secret is set) → fall through to direct RPC.
+    }
+  } catch (e) { /* fall through to direct RPC */ }
   if (!email) return null;
   const { data, error } = await client.rpc('msb_profile_by_email', { p_email: email });
   if (error) throw error;
