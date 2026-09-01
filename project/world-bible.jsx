@@ -51,10 +51,100 @@
     { value: 'private',    label: 'Private — studio only' },
   ];
 
+  /* ── seeding from existing canon ──────────────────────────────────────
+     The studio already holds the world: 21 elements, 41 factions, the hero
+     roster, the Lore Codex. Rather than start the World Bible empty, build
+     an article per canon entity, each linked back to the entity it describes
+     so the backlink panels on Heroes/Factions/Elements light up immediately.
+
+     Idempotent: every generated article carries canonRef, and anything
+     already seeded is skipped, so running it twice adds nothing. Records the
+     user has since edited are never touched.                                */
+  const CANON_SOURCES = [
+    { kind: 'faction', wk: 'FACTIONS',     label: 'Factions', template: 'organization' },
+    { kind: 'element', wk: 'ELEMENTS',     label: 'Elements', template: 'species' },
+    { kind: 'hero',    wk: 'HEROES',       label: 'Heroes & NPCs', template: 'character' },
+    { kind: 'lore',    wk: 'LORE_ENTRIES', label: 'Lore Codex', template: 'myth' },
+  ];
+
+  const canonList = (wk) => (Array.isArray(window[wk]) ? window[wk] : []).filter(r => r && r.id && !r._deleted);
+
+  function bodyForCanon(kind, r) {
+    if (kind === 'faction') return {
+      'Purpose': r.desc || '',
+      'Structure': '', 'Culture': '', 'Assets': '', 'Allies & Enemies': '', 'History': '',
+    };
+    if (kind === 'element') {
+      const names = (r.strongVs || []).map(id => {
+        const e = (window.ELEMENTS || []).find(x => x.id === id);
+        return e ? e.name : id;
+      });
+      return {
+        'Anatomy': '',
+        'Biological Traits': names.length ? 'Holds an advantage over ' + names.join(', ') + '.' : '',
+        'Ecology & Habitat': '', 'Behaviour': '',
+        'Civilisation & Culture': '', 'Relationship to Other Species': '',
+      };
+    }
+    if (kind === 'hero') return {
+      'Physical Description': r.appearance || '',
+      'Personality': Array.isArray(r.personality) ? r.personality.join(', ') : (r.personality || ''),
+      'History': r.backstory || r.bio || '',
+      'Motives & Goals': r.mission || '',
+      'Relationships': '', 'Speech & Mannerisms': r.voice || '',
+      'Notable Possessions': '',
+    };
+    return { 'Summary': r.sub || r.summary || '', 'Historical Basis': '', 'Variations & Mutation': '', 'Cultural Reception': '' };
+  }
+
+  function seedFromCanon({ existing, choices }) {
+    const already = new Set(existing
+      .filter(a => a.canonRef)
+      .map(a => a.canonRef.kind + ':' + a.canonRef.id));
+    const madeArticles = [], madeRels = [];
+
+    for (const src of CANON_SOURCES) {
+      const choice = choices[src.kind];
+      if (!choice || choice === 'skip') continue;
+      for (const r of canonList(src.wk)) {
+        const key = src.kind + ':' + r.id;
+        if (already.has(key)) continue;
+        already.add(key);
+        madeArticles.push({
+          id: (window.makeId ? window.makeId() : 'art_' + Date.now() + '_' + madeArticles.length),
+          title: r.name || r.title || r.id,
+          template: src.template,
+          category: src.label,
+          visibility: choice,
+          excerpt: r.desc || r.title2 || r.sub || r.mission || '',
+          cover: null,
+          tags: ['canon'],
+          links: [{ kind: src.kind, id: r.id }],   // lights up the entity's own page
+          secrets: [],
+          body: bodyForCanon(src.kind, r),
+          canonRef: { kind: src.kind, id: r.id },
+          createdAt: new Date().toISOString(),
+        });
+        // a hero belongs to their faction — a real tie worth recording
+        if (src.kind === 'hero' && r.faction) {
+          madeRels.push({
+            id: (window.makeId ? window.makeId() : 'rel_' + Date.now() + '_' + madeRels.length),
+            from: { kind: 'hero', id: r.id },
+            to: { kind: 'faction', id: r.faction },
+            type: 'member', note: 'From the hero roster', canonSeeded: true,
+          });
+        }
+      }
+    }
+    return { madeArticles, madeRels };
+  }
+
   function WorldBible() {
     const [articles, setArticles] = window.useEntities('articles');
     const [cats, setCats] = window.useEntities('articleCategories');
+    const [rels, setRels] = window.useEntities('relationships');
     const [openId, setOpenId] = useState(null);
+    const [seedOpen, setSeedOpen] = useState(false);
     const [q, setQ] = useState('');
     const [catFilter, setCatFilter] = useState('All');
     const [newOpen, setNewOpen] = useState(false);
@@ -87,6 +177,7 @@
             <div className="page-sub">{live.length} article{live.length === 1 ? '' : 's'} · {liveCats.length} categories</div>
           </div>
           <div className="page-actions">
+            <button className="btn" onClick={() => setSeedOpen(true)}>Seed from canon</button>
             <button className="btn btn-gold" onClick={() => setNewOpen(true)}>+ New article</button>
           </div>
         </div>
@@ -112,7 +203,10 @@
           <U.EmptyState
             title="The bible is empty"
             body="Articles are the backbone of the world. Pick a template — Character, Settlement, Species, Myth — and it will ask you the right questions for that kind of entry."
-            action={<button className="btn btn-gold" onClick={() => setNewOpen(true)}>Write the first article</button>}/>
+            action={<>
+              <button className="btn btn-gold" onClick={() => setSeedOpen(true)}>Seed from canon</button>
+              <button className="btn" style={{ marginLeft: 8 }} onClick={() => setNewOpen(true)}>Write one by hand</button>
+            </>}/>
         ) : (
           <div className="wb-grid">
             {shown.map(a => {
@@ -138,9 +232,76 @@
           </div>
         )}
 
+        <SeedModal open={seedOpen} onClose={() => setSeedOpen(false)} existing={live}
+          onSeed={(choices) => {
+            const { madeArticles, madeRels } = seedFromCanon({ existing: live, choices });
+            if (madeArticles.length) setArticles((articles || []).concat(madeArticles));
+            if (madeRels.length) {
+              const have = new Set((rels || []).map(r => r.from && r.to
+                ? r.from.kind + r.from.id + '>' + r.to.kind + r.to.id + ':' + r.type : ''));
+              const fresh = madeRels.filter(r =>
+                !have.has(r.from.kind + r.from.id + '>' + r.to.kind + r.to.id + ':' + r.type));
+              if (fresh.length) setRels((rels || []).concat(fresh));
+            }
+            setSeedOpen(false);
+          }}/>
+
         <NewArticleModal open={newOpen} onClose={() => setNewOpen(false)} cats={liveCats}
           onCreate={(a) => { setArticles((articles || []).concat(a)); setNewOpen(false); setOpenId(a.id); }}/>
       </div>
+    );
+  }
+
+  /* Per-source choice of what to create and how visible it should be. Nothing
+     is published without saying so here — the default is studio-only.        */
+  function SeedModal({ open, onClose, onSeed, existing }) {
+    const U = UI();
+    const seeded = new Set(existing.filter(a => a.canonRef).map(a => a.canonRef.kind + ':' + a.canonRef.id));
+    const [choices, setChoices] = useState({ faction: 'private', element: 'private', hero: 'private', lore: 'skip' });
+
+    const counts = CANON_SOURCES.map(src => {
+      const all = canonList(src.wk);
+      const fresh = all.filter(r => !seeded.has(src.kind + ':' + r.id));
+      return { ...src, total: all.length, fresh: fresh.length };
+    });
+    const totalFresh = counts.reduce((n, c) => n + (choices[c.kind] === 'skip' ? 0 : c.fresh), 0);
+
+    return (
+      <U.Modal open={open} title="Seed the World Bible from your canon" onClose={onClose}>
+        <div className="wos-dim" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 14 }}>
+          Creates one article per entry you already have, linked back to it so it shows up
+          on that entry's own page. Anything seeded before is skipped, so this is safe to
+          run again after adding more canon.
+        </div>
+        {counts.map(c => (
+          <div key={c.kind} className="wb-seed-row">
+            <div className="wb-seed-name">
+              {c.label}
+              <span className="wos-dim">
+                {c.fresh === 0
+                  ? (c.total === 0 ? 'nothing to import' : 'all ' + c.total + ' already seeded')
+                  : c.fresh + ' new' + (c.fresh !== c.total ? ' of ' + c.total : '')}
+              </span>
+            </div>
+            <select className="field-select" style={{ maxWidth: 190 }}
+              value={choices[c.kind]} disabled={c.fresh === 0}
+              onChange={e => setChoices({ ...choices, [c.kind]: e.target.value })}>
+              <option value="skip">Skip</option>
+              <option value="private">Create · studio only</option>
+              <option value="subscriber">Create · subscribers</option>
+              <option value="public">Create · public</option>
+            </select>
+          </div>
+        ))}
+        <div className="wos-dim" style={{ fontSize: 12, marginTop: 10 }}>
+          Heroes also get a "member of" relationship to their faction where the roster records one.
+        </div>
+        <div className="wos-modal-actions">
+          <button className="btn btn-gold" disabled={totalFresh === 0} onClick={() => onSeed(choices)}>
+            {totalFresh === 0 ? 'Nothing to create' : 'Create ' + totalFresh + ' article' + (totalFresh === 1 ? '' : 's')}
+          </button>
+        </div>
+      </U.Modal>
     );
   }
 
@@ -320,6 +481,9 @@
       .wb-vis-subscriber{color:var(--tide);border-color:var(--tide)}
       .wb-vis-private{color:var(--ink-faint)}
       .wb-secret-count{color:var(--aether)}
+      .wb-seed-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)}
+      .wb-seed-name{flex:1;display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--ink)}
+      .wb-seed-name .wos-dim{font-size:11px}
       .wb-tpl-preview{font-size:12px;color:var(--ink-faint);background:var(--parchment-3);border:1px solid var(--rule);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:12px;line-height:1.6}
       .wb-editor{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
       .wb-secrets{border-color:var(--aether)}

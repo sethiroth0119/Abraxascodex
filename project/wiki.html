@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>The World of Abraxas · Wiki</title>
+  <meta name="description" content="The public wiki for the world of Abraxas — factions, elements, characters and myths from Mythic Spellbook."/>
+  <link rel="icon" type="image/png" href="favicon.png?v=2"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      /* Palette mirrors worldanvil.com's own design tokens */
+      --gold:#ffab00; --gold-bright:#ffd37a; --gold-deep:#ba9d43;
+      --ink:#ffffff; --ink-dim:#cfcfcf; --ink-faint:#b0b0b0;
+      --bg:#09090a; --bg2:#0d0f11; --bg3:#191a1d; --rule:#2e3133; --navbar:#1b1d21;
+      --aether:#a05d68;
+      --display:"Oswald",system-ui,sans-serif; --body:"Lato",system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    img{display:block;max-width:100%}
+
+    header{position:sticky;top:0;z-index:10;background:rgba(27,29,33,.96);backdrop-filter:blur(12px);
+      border-bottom:1px solid rgba(255,171,0,.18);display:flex;align-items:center;gap:16px;padding:0 24px;height:60px}
+    .brand{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.08em;color:var(--gold-bright)}
+    .brand small{display:block;font-family:var(--body);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint)}
+    header input{margin-left:auto;background:var(--bg2);border:1px solid var(--rule);border-radius:6px;
+      color:var(--ink);font-family:var(--body);font-size:13px;padding:7px 12px;outline:none;width:min(280px,42vw)}
+    header input:focus{border-color:var(--gold-deep)}
+    header input::placeholder{color:var(--ink-faint)}
+    .signin{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);white-space:nowrap}
+    .signin:hover{color:var(--gold)}
+
+    .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 80px;display:grid;grid-template-columns:240px 1fr;gap:36px;align-items:start}
+    nav.toc{position:sticky;top:88px;font-size:13px;max-height:calc(100vh - 120px);overflow:auto}
+    .toc-h{font-family:var(--display);text-transform:uppercase;letter-spacing:.22em;color:var(--ink-faint);font-size:11px;padding:14px 8px 4px}
+    .toc-item{padding:5px 10px;border-radius:4px;color:var(--ink-dim);cursor:pointer}
+    .toc-item:hover{color:var(--ink);background:rgba(255,171,0,.07)}
+    .toc-item.active{color:var(--gold-bright);background:rgba(255,171,0,.12)}
+
+    article h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);color:var(--gold-bright);margin-bottom:8px;line-height:1.1}
+    article h2{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:.04em;color:var(--gold);
+      margin:30px 0 8px;border-bottom:1px solid var(--rule);padding-bottom:6px}
+    article p{margin:0 0 12px;color:var(--ink-dim);line-height:1.75}
+    .excerpt{font-size:17px;font-style:italic;color:var(--ink-dim);margin-bottom:14px}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;font-size:11px}
+    .badge{padding:2px 9px;border:1px solid var(--rule);border-radius:99px;color:var(--ink-faint)}
+    .cover{width:100%;max-height:300px;object-fit:cover;border-radius:8px;border:1px solid var(--rule);margin-bottom:20px}
+    .secrets h2{color:var(--aether);border-color:var(--aether)}
+    .secret{border:1px solid var(--aether);border-left-width:3px;border-radius:5px;padding:12px 14px;
+      margin-bottom:10px;background:rgba(160,93,104,.08)}
+    .secret b{font-family:var(--display);font-weight:500;color:var(--ink);display:block;margin-bottom:4px}
+    .empty{padding:60px 20px;text-align:center;color:var(--ink-faint)}
+    .empty h2{font-family:var(--display);color:var(--ink);font-size:22px;border:none;margin-bottom:10px}
+    .count{font-size:12px;color:var(--ink-faint);margin-bottom:18px}
+    footer{border-top:1px solid var(--rule);padding:24px;text-align:center;color:var(--ink-faint);font-size:12px}
+    @media (max-width:860px){.wrap{grid-template-columns:1fr;gap:20px}nav.toc{position:static;max-height:none}}
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="brand">Abraxas Codex<small>The World of Abraxas</small></a>
+    <input id="q" placeholder="Search the wiki…" autocomplete="off"/>
+    <a class="signin" href="/login.html">Studio sign in</a>
+  </header>
+
+  <div class="wrap">
+    <nav class="toc" id="toc"></nav>
+    <article id="view"><div class="empty"><h2>Loading the world…</h2></div></article>
+  </div>
+
+  <footer>© 2026 Hidn Studios · Public entries only. Studio members see more once signed in.</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+  /* Reads public.public_wiki_articles — a view that exposes ONLY articles
+     marked visibility='public', with secrets already filtered server-side to
+     the ones revealed to players. The anon key cannot reach
+     studio_collections itself, so nothing private is one query away. */
+  (function () {
+    const SUPABASE_URL = 'https://uvfhiqwvpixfobjnyqtf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2ZmhpcXd2cGl4Zm9iam55cXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTk2MzUsImV4cCI6MjA5NDY5NTYzNX0.rKWgWGuGJsaW_vn1J1_GnV0ayz91ctnEhsu57f06JtI';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const toc = document.getElementById('toc');
+    const view = document.getElementById('view');
+    const search = document.getElementById('q');
+    let all = [], current = null, filter = '';
+
+    const esc = (s) => String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const imageSrc = (cover) => (cover && (cover.url || cover.dataUrl)) || '';
+
+    function shown() {
+      const f = filter.trim().toLowerCase();
+      if (!f) return all;
+      return all.filter(a =>
+        (a.title || '').toLowerCase().includes(f) ||
+        (a.excerpt || '').toLowerCase().includes(f));
+    }
+
+    function renderToc() {
+      const list = shown();
+      if (!list.length) { toc.innerHTML = '<div class="toc-h">Nothing found</div>'; return; }
+      const groups = {};
+      list.forEach(a => { (groups[a.category || 'Uncategorised'] = groups[a.category || 'Uncategorised'] || []).push(a); });
+      toc.innerHTML = Object.keys(groups).sort().map(cat =>
+        '<div class="toc-h">' + esc(cat) + '</div>' +
+        groups[cat].map(a =>
+          '<div class="toc-item' + (current && current.id === a.id ? ' active' : '') +
+          '" data-id="' + esc(a.id) + '">' + esc(a.title) + '</div>').join('')
+      ).join('');
+      toc.querySelectorAll('.toc-item').forEach(el => {
+        el.onclick = () => { current = all.find(a => a.id === el.dataset.id); renderToc(); renderArticle(); };
+      });
+    }
+
+    function paragraphs(text) {
+      return String(text).split(/\n{2,}/).filter(Boolean)
+        .map(p => '<p>' + esc(p).replace(/\n/g, '<br/>') + '</p>').join('');
+    }
+
+    function renderArticle() {
+      if (!current) {
+        view.innerHTML = '<h1>The World of Abraxas</h1>' +
+          '<p class="excerpt">' + all.length + ' public entr' + (all.length === 1 ? 'y' : 'ies') +
+          '. Choose one from the list.</p>';
+        return;
+      }
+      const cover = imageSrc(current.cover);
+      const body = current.body || {};
+      const sections = Object.keys(body).filter(k => String(body[k] || '').trim());
+      const secrets = current.secrets || [];
+      view.innerHTML =
+        (cover ? '<img class="cover" src="' + esc(cover) + '" alt=""/>' : '') +
+        '<h1>' + esc(current.title) + '</h1>' +
+        (current.excerpt ? '<p class="excerpt">' + esc(current.excerpt) + '</p>' : '') +
+        '<div class="badges">' +
+          (current.category ? '<span class="badge">' + esc(current.category) + '</span>' : '') +
+          (current.tags || []).map(t => '<span class="badge">' + esc(t) + '</span>').join('') +
+        '</div>' +
+        (sections.length
+          ? sections.map(k => '<h2>' + esc(k) + '</h2>' + paragraphs(body[k])).join('')
+          : '<p>This entry has not been written up yet.</p>') +
+        (secrets.length
+          ? '<div class="secrets"><h2>Revealed</h2>' + secrets.map(s =>
+              '<div class="secret"><b>' + esc(s.title) + '</b>' + esc(s.body) + '</div>').join('') + '</div>'
+          : '');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    search.oninput = () => { filter = search.value; renderToc(); };
+
+    (async function load() {
+      try {
+        const { data, error } = await sb
+          .from('public_wiki_articles').select('*').order('title');
+        if (error) throw error;
+        all = data || [];
+        if (!all.length) {
+          toc.innerHTML = '';
+          view.innerHTML = '<div class="empty"><h2>Nothing published yet</h2>' +
+            '<p>The studio has not made any entries public. Check back soon.</p></div>';
+          return;
+        }
+        renderToc(); renderArticle();
+      } catch (e) {
+        view.innerHTML = '<div class="empty"><h2>The wiki could not be loaded</h2>' +
+          '<p>' + esc(e.message || 'Unknown error') + '</p></div>';
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>
