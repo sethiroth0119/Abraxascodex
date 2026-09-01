@@ -10,29 +10,32 @@
   <link rel="apple-touch-icon" href="favicon.png?v=2"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Cormorant+SC:wght@400;500;600&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet"/>
   <style>
     /* ── Tokens ─────────────────────────────────────── */
     :root {
-      --gold:        #2f9bff;
-      --gold-bright: #63b8ff;
-      --gold-deep:   #1660a8;
-      --ink:         #e6edf3;
-      --ink-dim:     #9fb2c5;
-      --ink-faint:   #5f7183;
-      --parchment:   #0a0d12;
-      --p2:          #0e131b;
-      --p3:          #131b26;
-      --rule:        #1e2a38;
-      --ember:       #e0781f;
-      --verdant:     #3fb950;
-      --tide:        #22d3ee;
-      --aether:      #a48ad2;
-      --serif:       "Inter Tight", system-ui, sans-serif;
-      --display:     "Inter Tight", system-ui, sans-serif;
-      --body:        "Inter Tight", system-ui, sans-serif;
+      /* Palette mirrors worldanvil.com's own design tokens */
+      --gold:        #ffab00;   /* WA --highlight        */
+      --gold-bright: #ffd37a;   /* WA --highlight-light  */
+      --gold-deep:   #ba9d43;   /* WA --warning-hover    */
+      --ink:         #dadada;   /* WA --off-white        */
+      --ink-dim:     #9c9b9b;   /* WA --light-gray       */
+      --ink-faint:   #8a8a8a;   /* just under WA --light-gray; lifted to clear 4.5:1 on --p3 */
+      --parchment:   #09090a;   /* WA --background-terror */
+      --p2:          #0d0f11;   /* WA --darkest-terror   */
+      --p3:          #191a1d;   /* WA --dark-terror      */
+      --rule:        #2e3133;   /* WA --light-terror     */
+      --navbar:      #1b1d21;   /* WA --navbar-color     */
+      --guild:       #af0000;   /* WA --guild-red        */
+      --guild-deep:  #7d0f0f;
+      --ember:       #ab763e;   /* WA --orange           */
+      --verdant:     #138c64;   /* WA --create-light     */
+      --tide:        #9dbfcf;   /* WA --lightest-blue    */
+      --aether:      #a05d68;   /* WA --pink             */
+      --serif:       "Lato", system-ui, sans-serif;
+      --display:     "Oswald", "Inter Tight", system-ui, sans-serif;
+      --body:        "Lato", system-ui, sans-serif;
     }
-
     /* ── Reset ──────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -47,6 +50,17 @@
     }
     a { color: inherit; text-decoration: none; }
     img { display: block; max-width: 100%; }
+
+    /* ── Line icons (same language as the studio's icons.jsx) ── */
+    .icn {
+      width: 1em; height: 1em;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
     /* ── Grain overlay ──────────────────────────────── */
     .grain {
@@ -63,9 +77,9 @@
       justify-content: space-between;
       padding: 0 40px;
       height: 64px;
-      background: rgba(8,11,16,.92);
+      background: rgba(27,29,33,.94);
       backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(47,155,255,.18);
+      border-bottom: 1px solid rgba(255,171,0,.18);
     }
     .nav-brand {
       display: flex;
@@ -75,16 +89,27 @@
     .nav-mark {
       width: 36px; height: 36px;
       border-radius: 50%;
-      background: radial-gradient(circle at 40% 35%, #123049, #070b12);
+      background: radial-gradient(circle at 40% 35%, #2a2416, #0d0f11);
       border: 1px solid var(--gold-deep);
-      box-shadow: 0 0 16px rgba(47,155,255,.16);
+      box-shadow: 0 0 16px rgba(255,171,0,.16);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      font-size: 20px;
+      color: var(--gold);
     }
+    .nav-jump {
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      padding: 0 4px;
+      transition: color .15s;
+    }
+    .nav-jump:hover { color: var(--gold); }
     .nav-name {
       font-family: var(--display);
-      font-size: 17px;
-      letter-spacing: .18em;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: .08em;
       color: var(--gold-bright);
     }
     .nav-sub {
@@ -114,13 +139,13 @@
     .btn-ghost:hover { border-color: var(--gold-deep); color: var(--gold); }
     .btn-gold {
       padding: 8px 20px;
-      background: linear-gradient(135deg, var(--gold-deep), var(--gold));
-      border: none;
-      border-radius: 6px;
+      background: linear-gradient(180deg, #a32020, var(--guild-deep));
+      border: 1px solid var(--gold-deep);
+      border-radius: 8px;
       font-family: var(--display);
       font-size: 12px;
       letter-spacing: .14em;
-      color: #f0e8e0;
+      color: #fcfcfc;
       font-weight: 600;
       cursor: pointer;
       transition: opacity .15s, transform .1s;
@@ -143,7 +168,7 @@
       position: absolute;
       inset: 0;
       background: url('abraxas-bg.png') center center / cover no-repeat;
-      filter: saturate(.55) hue-rotate(178deg) brightness(.72) contrast(1.05);
+      filter: saturate(.45) brightness(.5) contrast(1.04);
       opacity: .8;
       z-index: 0;
     }
@@ -151,8 +176,8 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 70% 50% at 50% 30%, rgba(47,155,255,.06), transparent 65%),
-        linear-gradient(180deg, rgba(8,11,16,.10) 0%, rgba(8,11,16,.35) 60%, rgba(8,11,16,.75) 100%);
+        radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255,171,0,.06), transparent 65%),
+        linear-gradient(180deg, rgba(9,9,10,.10) 0%, rgba(9,9,10,.35) 60%, rgba(9,9,10,.75) 100%);
       z-index: 1;
     }
     .hero-content {
@@ -170,9 +195,9 @@
       color: var(--gold);
       margin-bottom: 28px;
       padding: 5px 16px;
-      border: 1px solid rgba(47,155,255,.28);
+      border: 1px solid rgba(255,171,0,.28);
       border-radius: 20px;
-      background: rgba(47,155,255,.07);
+      background: rgba(255,171,0,.07);
     }
     .hero-eyebrow::before, .hero-eyebrow::after {
       content: '·';
@@ -181,16 +206,18 @@
     .hero-title {
       font-family: var(--display);
       font-size: clamp(42px, 8vw, 88px);
-      letter-spacing: .1em;
+      font-weight: 700;
+      letter-spacing: .01em;
       line-height: 1.05;
-      color: #f0f4f0;
-      text-shadow: 0 0 80px rgba(47,155,255,.2), 0 2px 8px rgba(0,0,0,.9);
+      color: #ffffff;
+      text-shadow: 0 0 80px rgba(255,171,0,.2), 0 2px 8px rgba(0,0,0,.9);
       margin-bottom: 12px;
     }
     .hero-subtitle {
       font-family: var(--display);
       font-size: clamp(18px, 3vw, 28px);
-      letter-spacing: .18em;
+      font-weight: 400;
+      letter-spacing: .1em;
       color: var(--ink-dim);
       margin-bottom: 28px;
     }
@@ -211,23 +238,23 @@
     }
     .btn-hero-primary {
       padding: 14px 34px;
-      background: linear-gradient(135deg, var(--gold-deep), var(--gold));
-      border: none;
-      border-radius: 7px;
+      background: linear-gradient(180deg, #a32020, var(--guild-deep));
+      border: 1px solid var(--gold-deep);
+      border-radius: 8px;
       font-family: var(--display);
       font-size: 14px;
-      letter-spacing: .2em;
-      color: #f0e8e0;
+      letter-spacing: .16em;
+      color: #fcfcfc;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(47,155,255,.28), 0 8px 24px rgba(0,0,0,.4);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 24px rgba(0,0,0,.55);
       transition: opacity .15s, transform .15s, box-shadow .15s;
     }
-    .btn-hero-primary:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 0 60px rgba(47,155,255,.38),0 12px 32px rgba(0,0,0,.5); }
+    .btn-hero-primary:hover { border-color: var(--gold); transform:translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 12px 32px rgba(0,0,0,.6); }
     .btn-hero-ghost {
       padding: 14px 34px;
       background: transparent;
-      border: 1px solid rgba(47,155,255,.38);
+      border: 1px solid rgba(255,171,0,.38);
       border-radius: 7px;
       font-family: var(--display);
       font-size: 14px;
@@ -236,7 +263,7 @@
       cursor: pointer;
       transition: background .15s, border-color .15s, transform .15s;
     }
-    .btn-hero-ghost:hover { background:rgba(47,155,255,.10); border-color:var(--gold); transform:translateY(-2px); }
+    .btn-hero-ghost:hover { background:rgba(255,171,0,.10); border-color:var(--gold); transform:translateY(-2px); }
     .hero-scroll {
       position: absolute;
       bottom: 36px;
@@ -270,15 +297,16 @@
       content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, rgba(47,155,255,.32), transparent);
+      background: linear-gradient(90deg, rgba(255,171,0,.32), transparent);
       max-width: 80px;
     }
     .section-title {
       font-family: var(--display);
       font-size: clamp(28px, 4vw, 46px);
-      letter-spacing: .08em;
+      font-weight: 700;
+      letter-spacing: .01em;
       line-height: 1.15;
-      color: #f0f4f0;
+      color: #ffffff;
       margin-bottom: 16px;
     }
     .section-body {
@@ -311,16 +339,16 @@
       padding: 20px;
       border: 1px solid var(--rule);
       border-radius: 8px;
-      background: rgba(47,155,255,.04);
+      background: rgba(255,171,0,.04);
       transition: border-color .2s, background .2s;
     }
-    .pillar:hover { border-color: rgba(47,155,255,.28); background: rgba(47,155,255,.07); }
+    .pillar:hover { border-color: rgba(255,171,0,.28); background: rgba(255,171,0,.07); }
     .pillar-icon {
       width: 42px; height: 42px;
       flex-shrink: 0;
       border-radius: 8px;
-      background: rgba(47,155,255,.10);
-      border: 1px solid rgba(47,155,255,.22);
+      background: rgba(255,171,0,.10);
+      border: 1px solid rgba(255,171,0,.22);
       display: flex; align-items: center; justify-content: center;
       font-size: 20px;
     }
@@ -368,17 +396,18 @@
       border-radius: 20px;
       margin-bottom: 14px;
     }
-    .badge-player { background: rgba(74,138,168,.15); border: 1px solid rgba(74,138,168,.35); color: #88bbd4; }
-    .badge-studio { background: rgba(47,155,255,.14); border: 1px solid rgba(47,155,255,.32); color: var(--gold); }
+    .badge-player { background: rgba(157,191,207,.15); border: 1px solid rgba(157,191,207,.35); color: #9dbfcf; }
+    .badge-studio { background: rgba(255,171,0,.14); border: 1px solid rgba(255,171,0,.32); color: var(--gold); }
     .audience-title {
       font-family: var(--display);
       font-size: 24px;
-      letter-spacing: .1em;
+      font-weight: 600;
+      letter-spacing: .01em;
       line-height: 1.2;
       margin-bottom: 10px;
     }
-    .player-title { color: #88ccd4; }
-    .studio-title { color: #f0f4f0; }
+    .player-title { color: #9dbfcf; }
+    .studio-title { color: #ffffff; }
     .audience-desc {
       font-family: var(--serif);
       font-size: 14px;
@@ -404,8 +433,8 @@
       font-size: 11px;
       margin-top: 1px;
     }
-    .dot-player { background: rgba(74,138,168,.15); color: #88bbd4; }
-    .dot-studio { background: rgba(47,155,255,.14); color: var(--gold); }
+    .dot-player { background: rgba(157,191,207,.15); color: #9dbfcf; }
+    .dot-studio { background: rgba(255,171,0,.14); color: var(--gold); }
     .feature-text {
       font-size: 13px;
       color: var(--ink-dim);
@@ -442,11 +471,11 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(47,155,255,.22), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255,171,0,.22), transparent);
       opacity: 0;
       transition: opacity .2s;
     }
-    .feat-card:hover { border-color: rgba(47,155,255,.28); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+    .feat-card:hover { border-color: rgba(255,171,0,.28); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
     .feat-card:hover::before { opacity: 1; }
     .feat-icon {
       width: 48px; height: 48px;
@@ -454,13 +483,13 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 22px;
       margin-bottom: 16px;
-      border: 1px solid rgba(47,155,255,.16);
+      border: 1px solid rgba(255,171,0,.16);
     }
     .feat-name {
       font-family: var(--display);
       font-size: 15px;
       letter-spacing: .12em;
-      color: #e8f0e8;
+      color: #f0f0f0;
       margin-bottom: 8px;
     }
     .feat-desc {
@@ -496,25 +525,25 @@
     .showcase-row:last-child { margin-bottom: 0; }
     .showcase-row.flip .win { order: -1; }
     .sc-kicker { color: var(--gold); font-size: 10px; letter-spacing: .3em; text-transform: uppercase; margin-bottom: 14px; }
-    .showcase-copy h3 { font-family: var(--display); font-size: clamp(23px, 3vw, 32px); letter-spacing: .02em; color: #f0f4f0; margin-bottom: 14px; line-height: 1.15; }
+    .showcase-copy h3 { font-family: var(--display); font-size: clamp(23px, 3vw, 32px); font-weight: 600; letter-spacing: .01em; color: #ffffff; margin-bottom: 14px; line-height: 1.15; }
     .showcase-copy p { font-family: var(--serif); color: var(--ink-dim); line-height: 1.75; font-size: 16px; }
     .sc-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-    .sc-tag { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 4px 11px; border: 1px solid var(--rule); border-radius: 20px; background: rgba(47,155,255,.05); }
+    .sc-tag { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 4px 11px; border: 1px solid var(--rule); border-radius: 20px; background: rgba(255,171,0,.05); }
     /* Editor-window frame */
     .win {
       border: 1px solid var(--rule);
       border-radius: 12px;
       overflow: hidden;
-      background: linear-gradient(180deg, #0e1620, #0a0f16);
-      box-shadow: 0 30px 70px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(47,155,255,.05), 0 0 70px -24px rgba(47,155,255,.22);
+      background: linear-gradient(180deg, #191a1d, #0d0f11);
+      box-shadow: 0 30px 70px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,171,0,.05), 0 0 70px -24px rgba(255,171,0,.22);
     }
-    .win-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--rule); background: rgba(47,155,255,.04); }
+    .win-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--rule); background: rgba(255,171,0,.04); }
     .win-dot { width: 10px; height: 10px; border-radius: 50%; }
     .win-title { margin-left: 8px; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); font-family: var(--body); }
     .win-body { padding: 22px; min-height: 244px; display: flex; }
     /* mini card (Card Forge) */
-    .m-card { width: 132px; flex: none; border-radius: 10px; border: 1px solid rgba(47,155,255,.3); background: linear-gradient(180deg, #12233a, #0a1220); box-shadow: 0 0 24px -6px rgba(47,155,255,.4); display: flex; flex-direction: column; padding: 10px; }
-    .m-card .m-art { flex: 1; border-radius: 6px; background: radial-gradient(circle at 40% 30%, rgba(99,184,255,.5), rgba(47,155,255,.12) 60%, transparent), #0b1524; margin-bottom: 8px; min-height: 120px; }
+    .m-card { width: 132px; flex: none; border-radius: 10px; border: 1px solid rgba(255,171,0,.3); background: linear-gradient(180deg, #2a2418, #12110c); box-shadow: 0 0 24px -6px rgba(255,171,0,.4); display: flex; flex-direction: column; padding: 10px; }
+    .m-card .m-art { flex: 1; border-radius: 6px; background: radial-gradient(circle at 40% 30%, rgba(255,211,122,.5), rgba(255,171,0,.12) 60%, transparent), #14130d; margin-bottom: 8px; min-height: 120px; }
     .m-card .m-name { font-family: var(--display); font-size: 13px; color: var(--gold-bright); letter-spacing: .04em; }
     .m-card .m-meta { font-size: 10px; color: var(--ink-faint); margin-top: 2px; }
     .m-fields { flex: 1; margin-left: 20px; display: flex; flex-direction: column; gap: 11px; }
@@ -524,13 +553,13 @@
     .m-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright)); }
     /* sprite grid (Sprite Forge) */
     .m-sprites { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 8px; }
-    .m-sprite { border-radius: 7px; border: 1px solid rgba(47,155,255,.16); background: linear-gradient(135deg, rgba(47,155,255,.16), rgba(34,211,238,.06)); min-height: 56px; display: grid; place-items: center; font-size: 20px; }
+    .m-sprite { color: var(--gold-bright); border-radius: 7px; border: 1px solid rgba(255,171,0,.16); background: linear-gradient(135deg, rgba(255,171,0,.16), rgba(157,191,207,.06)); min-height: 56px; display: grid; place-items: center; font-size: 20px; }
     /* chat (Athena) */
     .m-chat { flex: 1; display: flex; flex-direction: column; gap: 12px; justify-content: center; }
     .m-msg { max-width: 78%; padding: 11px 14px; border-radius: 12px; font-family: var(--serif); font-size: 13px; line-height: 1.5; }
-    .m-msg.ai { align-self: flex-start; background: rgba(47,155,255,.1); border: 1px solid rgba(47,155,255,.24); color: var(--ink); border-bottom-left-radius: 3px; }
+    .m-msg.ai { align-self: flex-start; background: rgba(255,171,0,.1); border: 1px solid rgba(255,171,0,.24); color: var(--ink); border-bottom-left-radius: 3px; }
     .m-msg.you { align-self: flex-end; background: rgba(255,255,255,.05); border: 1px solid var(--rule); color: var(--ink-dim); border-bottom-right-radius: 3px; }
-    .m-owl { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #1b3a5c, #0a1524); border: 1px solid rgba(47,155,255,.4); display: grid; place-items: center; font-size: 14px; margin-bottom: 4px; }
+    .m-owl { color: var(--gold-bright); width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #2e2a1a, #0d0f11); border: 1px solid rgba(255,171,0,.4); display: grid; place-items: center; font-size: 14px; margin-bottom: 4px; }
 
     /* ── Built Together ─────────────────────────────── */
     .together {
@@ -544,10 +573,10 @@
     .quote-block {
       margin: 48px 0;
       padding: 36px 40px;
-      border: 1px solid rgba(47,155,255,.22);
+      border: 1px solid rgba(255,171,0,.22);
       border-left: 3px solid var(--gold);
       border-radius: 0 8px 8px 0;
-      background: rgba(47,155,255,.05);
+      background: rgba(255,171,0,.05);
       text-align: left;
     }
     .quote-text {
@@ -576,8 +605,9 @@
     }
     .stat-number {
       font-family: var(--display);
-      font-size: 42px;
-      letter-spacing: .08em;
+      font-size: 46px;
+      font-weight: 700;
+      letter-spacing: .01em;
       color: var(--gold-bright);
       line-height: 1;
       margin-bottom: 6px;
@@ -601,14 +631,15 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(47,155,255,.08), transparent);
+      background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(255,171,0,.08), transparent);
       pointer-events: none;
     }
     .cta-title {
       font-family: var(--display);
       font-size: clamp(32px, 5vw, 58px);
-      letter-spacing: .1em;
-      color: #f0f4f0;
+      font-weight: 700;
+      letter-spacing: .01em;
+      color: #ffffff;
       margin-bottom: 16px;
       position: relative;
     }
@@ -631,23 +662,23 @@
     }
     .btn-cta-primary {
       padding: 16px 40px;
-      background: linear-gradient(135deg, var(--gold-deep), var(--gold));
-      border: none;
-      border-radius: 7px;
+      background: linear-gradient(180deg, #a32020, var(--guild-deep));
+      border: 1px solid var(--gold-deep);
+      border-radius: 8px;
       font-family: var(--display);
       font-size: 15px;
-      letter-spacing: .2em;
-      color: #f0e8e0;
+      letter-spacing: .16em;
+      color: #fcfcfc;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(47,155,255,.22), 0 8px 24px rgba(0,0,0,.4);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 24px rgba(0,0,0,.55);
       transition: opacity .15s, transform .15s;
     }
-    .btn-cta-primary:hover { opacity: .9; transform: translateY(-2px); }
+    .btn-cta-primary:hover { border-color: var(--gold); transform: translateY(-2px); }
     .btn-cta-ghost {
       padding: 16px 40px;
       background: transparent;
-      border: 1px solid rgba(47,155,255,.32);
+      border: 1px solid rgba(255,171,0,.32);
       border-radius: 7px;
       font-family: var(--display);
       font-size: 15px;
@@ -656,22 +687,13 @@
       cursor: pointer;
       transition: background .15s, border-color .15s;
     }
-    .btn-cta-ghost:hover { background: rgba(47,155,255,.08); border-color: var(--gold); }
+    .btn-cta-ghost:hover { background: rgba(255,171,0,.08); border-color: var(--gold); }
 
     /* ── Footer ─────────────────────────────────────── */
     footer {
       background: var(--parchment);
       border-top: 1px solid var(--rule);
-      padding: 40px 24px;
-    }
-    .footer-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
+      padding: 56px 24px 40px;
     }
     .footer-brand {
       font-family: var(--display);
@@ -683,21 +705,43 @@
       font-size: 11px;
       letter-spacing: .1em;
       color: var(--ink-faint);
+      margin-top: 6px;
     }
-    .footer-links {
-      display: flex;
-      gap: 24px;
-      font-size: 12px;
-      letter-spacing: .1em;
+    .footer-inner {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .footer-col { display: flex; flex-direction: column; gap: 10px; }
+    .footer-mark { display: flex; align-items: center; gap: 12px; }
+    .footer-mark .nav-mark { width: 30px; height: 30px; font-size: 17px; }
+    .footer-blurb {
+      font-family: var(--serif);
+      font-size: 13px;
       color: var(--ink-faint);
+      line-height: 1.7;
+      max-width: 380px;
     }
-    .footer-links a:hover { color: var(--gold); }
+    .footer-head {
+      font-size: 10px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 2px;
+    }
+    .footer-col a {
+      font-size: 13px;
+      color: var(--ink-faint);
+      transition: color .15s;
+    }
+    .footer-col a:hover { color: var(--gold); }
 
     /* ── Divider ornament ───────────────────────────── */
     .ornament-divider {
       text-align: center;
       font-size: 18px;
-      color: rgba(47,155,255,.32);
+      color: rgba(255,171,0,.32);
       letter-spacing: .4em;
       margin: 0;
       padding: 24px 0;
@@ -714,25 +758,66 @@
       .showcase-row { grid-template-columns: 1fr; gap: 28px; margin-bottom: 52px; }
       .showcase-row.flip .win { order: 0; }
       .stat-row { gap: 32px; }
+      .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+      .nav-jump { display: none; }
       section { padding: 64px 20px; }
     }
     @media (max-width: 480px) {
       .nav-links .btn-ghost { display: none; }
+      nav { padding: 0 14px; }
+      .nav-name { font-size: 14px; letter-spacing: .12em; white-space: nowrap; }
+      .nav-mark { width: 30px; height: 30px; font-size: 17px; }
+      .btn-gold { padding: 8px 14px; font-size: 11px; white-space: nowrap; }
     }
   </style>
 </head>
 <body class="grain">
 
+  <!-- ── Icon sprite — mirrors the studio's icons.jsx line set ── -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-mark" viewBox="0 0 24 24"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/><path d="M12 3v6.4M12 14.6V21M4.2 7.5l5.5 3.2M14.3 13.3l5.5 3.2M19.8 7.5l-5.5 3.2M9.7 13.3l-5.5 3.2"/></symbol>
+      <symbol id="i-card" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="1.5"/><circle cx="12" cy="9" r="2"/><path d="M9 14h6M9 17h6"/></symbol>
+      <symbol id="i-hero" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></symbol>
+      <symbol id="i-faction" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.3 7.8 8 9 4.7-1.2 8-4.5 8-9V6l-8-3z"/></symbol>
+      <symbol id="i-tree" viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="6" cy="20" r="2"/><circle cx="18" cy="20" r="2"/><path d="M12 6v3M6 14v4M18 14v4M8 12h8M12 9 6 12M12 9l6 3"/></symbol>
+      <symbol id="i-lore" viewBox="0 0 24 24"><path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6v4l4 10a3 3 0 0 1-3 4H8a3 3 0 0 1-3-4l4-10z"/><path d="M7 14h10"/></symbol>
+      <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M6 4a2 2 0 0 0-2 2v2h2"/><path d="M9 9h7M9 13h7M9 17h4"/></symbol>
+      <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M9 9.5c.6-1 1.7-1.5 3-1.5 1.7 0 3 1 3 2.3 0 2.6-5 1.7-5 4.4 0 1.3 1.3 2.3 3 2.3 1.3 0 2.4-.5 3-1.5"/><path d="M12 7v10"/></symbol>
+      <symbol id="i-relic" viewBox="0 0 24 24"><path d="M12 3v3M9 5h6"/><path d="M7 8h10l-1 12H8z"/><circle cx="12" cy="13" r="2"/></symbol>
+      <symbol id="i-feed" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><path d="M4 4a16 16 0 0 1 16 16M4 10a10 10 0 0 1 10 10"/></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="16" cy="8" r="2"/><circle cx="10" cy="16" r="2"/></symbol>
+      <symbol id="i-comment" viewBox="0 0 24 24"><path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M8 8h8M8 12h5"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3 6 1.4 1.4L7 4.8M3 12l1.4 1.4L7 10.8M3 18l1.4 1.4L7 16.8"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.6 5.7 6.4.7-4.8 4.3 1.4 6.3L12 17l-5.6 3 1.4-6.3L3 9.4l6.4-.7z"/></symbol>
+      <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L20 8a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m14 6 4 4"/></symbol>
+      <symbol id="i-bug" viewBox="0 0 24 24"><path d="M8 9a4 4 0 0 1 8 0v4a4 4 0 0 1-8 0z"/><path d="M4 10h4M16 10h4M4 17h4M16 17h4M9 6 7.5 4M15 6l1.5-2M12 20v-2"/></symbol>
+      <symbol id="i-owl" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 16 0v3a8 8 0 0 1-16 0z"/><circle cx="9" cy="10" r="2.2"/><circle cx="15" cy="10" r="2.2"/><path d="m12 13 1.4 2h-2.8zM5 5l2.5 2.5M19 5l-2.5 2.5"/></symbol>
+      <symbol id="i-spark" viewBox="0 0 24 24"><path d="m11 3 1.9 4.4L17 9.3l-4.1 1.9L11 15.6l-1.9-4.4L5 9.3l4.1-1.9z"/><path d="m18 14 .9 2.1L21 17l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></symbol>
+      <symbol id="i-loop" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-13.7-5.7L4 8"/><path d="M4 13a8 8 0 0 0 13.7 5.7L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/></symbol>
+      <symbol id="i-monster" viewBox="0 0 24 24"><path d="M4 11a8 8 0 0 1 16 0v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/><circle cx="9.5" cy="11" r="1.2"/><circle cx="14.5" cy="11" r="1.2"/><path d="m9 16 1.5-1.5L12 16l1.5-1.5L15 16"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16"/><path d="M12 4c2.5 2.6 2.5 12.4 0 16-2.5-3.6-2.5-13.4 0-16z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m10 8.5 5.5 3.5L10 15.5z"/></symbol>
+      <symbol id="i-blade" viewBox="0 0 24 24"><path d="M20 3v5l-9.5 9.5-3-3L17 5z"/><path d="m7.5 14.5-2 2 2 2 2-2M4 20l2-2"/></symbol>
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></symbol>
+    </defs>
+  </svg>
+
   <!-- ── Navbar ──────────────────────────────────────── -->
   <nav>
     <a href="/" class="nav-brand">
-      <div class="nav-mark">📖</div>
+      <div class="nav-mark"><svg class="icn"><use href="#i-mark"/></svg></div>
       <div>
         <div class="nav-name">Abraxas Codex</div>
         <div class="nav-sub">Hidn Studios</div>
       </div>
     </a>
     <div class="nav-links">
+      <a href="#platform" class="nav-jump">Platform</a>
+      <a href="#tools" class="nav-jump">Tools</a>
+      <a href="#together" class="nav-jump">Philosophy</a>
       <a href="/login.html" class="btn-ghost">Sign In</a>
       <a href="/login.html" class="btn-gold">Enter the Codex</a>
     </div>
@@ -757,7 +842,7 @@
     <div class="hero-scroll">
       <span>Scroll</span>
       <svg width="14" height="20" viewBox="0 0 14 20" fill="none">
-        <path d="M7 1v18M1 13l6 6 6-6" stroke="#2f9bff" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M7 1v18M1 13l6 6 6-6" stroke="#ffab00" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
   </section>
@@ -778,21 +863,21 @@
         </div>
         <div class="intro-pillars">
           <div class="pillar">
-            <div class="pillar-icon">📖</div>
+            <div class="pillar-icon"><svg class="icn"><use href="#i-lore"/></svg></div>
             <div class="pillar-text">
               <h4>Living Canon</h4>
               <p>Every card, character, faction, and world event lives here — updated in real time as the game develops.</p>
             </div>
           </div>
           <div class="pillar">
-            <div class="pillar-icon">🔁</div>
+            <div class="pillar-icon"><svg class="icn"><use href="#i-loop"/></svg></div>
             <div class="pillar-text">
               <h4>Community Feedback Loop</h4>
               <p>Players post directly to developers in Threads. Bug reports go straight into the dev pipeline. Your input ships in the next patch.</p>
             </div>
           </div>
           <div class="pillar">
-            <div class="pillar-icon">🦉</div>
+            <div class="pillar-icon"><svg class="icn"><use href="#i-owl"/></svg></div>
             <div class="pillar-text">
               <h4>AI-Powered Creation</h4>
               <p>Athena AI knows every rule, faction, and character in Abraxas. The Sprite Forge generates game-ready art from lore descriptions.</p>
@@ -819,33 +904,33 @@
         <!-- Players -->
         <div class="audience-card">
           <div class="audience-head">
-            <div class="audience-badge badge-player">⚔ For Mythic Spellbook Players</div>
+            <div class="audience-badge badge-player"><svg class="icn"><use href="#i-blade"/></svg> For Mythic Spellbook Players</div>
             <h3 class="audience-title player-title">Watch the Game Come Alive</h3>
             <p class="audience-desc">You're not just playing a finished product — you're watching Abraxas grow in real time and leaving your mark on what it becomes.</p>
           </div>
           <div class="audience-features">
             <div class="feature-row">
-              <div class="feature-dot dot-player">📚</div>
+              <div class="feature-dot dot-player"><svg class="icn"><use href="#i-card"/></svg></div>
               <div class="feature-text"><strong>Full card library</strong> — browse every spell, creature, and ability in Mythic Spellbook as it's added to canon.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-player">☥</div>
+              <div class="feature-dot dot-player"><svg class="icn"><use href="#i-hero"/></svg></div>
               <div class="feature-text"><strong>Heroes & NPCs</strong> — follow every character across the world of Abraxas, with full lore and lineage trees.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-player">✶</div>
+              <div class="feature-dot dot-player"><svg class="icn"><use href="#i-faction"/></svg></div>
               <div class="feature-text"><strong>Factions & Elements</strong> — understand the full power system: what each faction stands for, what each element does.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-player">🕰</div>
+              <div class="feature-dot dot-player"><svg class="icn"><use href="#i-clock"/></svg></div>
               <div class="feature-text"><strong>Timeline & Lore</strong> — explore the history of Abraxas across ages, from myth to the present arc.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-player">❝</div>
+              <div class="feature-dot dot-player"><svg class="icn"><use href="#i-comment"/></svg></div>
               <div class="feature-text"><strong>Community Threads</strong> — talk directly with the dev team. Your ideas, questions, and reactions in one place.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-player">🐛</div>
+              <div class="feature-dot dot-player"><svg class="icn"><use href="#i-bug"/></svg></div>
               <div class="feature-text"><strong>Bug Tracker</strong> — report issues and see them get resolved. Community testing, built in.</div>
             </div>
           </div>
@@ -854,33 +939,33 @@
         <!-- Studio -->
         <div class="audience-card">
           <div class="audience-head">
-            <div class="audience-badge badge-studio">⚡ For Hidn Studios</div>
+            <div class="audience-badge badge-studio"><svg class="icn"><use href="#i-spark"/></svg> For Hidn Studios</div>
             <h3 class="audience-title studio-title">A Complete Game Development Engine</h3>
             <p class="audience-desc">Every tool the studio needs to design, balance, and publish Mythic Spellbook — in one connected platform, alongside the community.</p>
           </div>
           <div class="audience-features">
             <div class="feature-row">
-              <div class="feature-dot dot-studio">⚔</div>
+              <div class="feature-dot dot-studio"><svg class="icn"><use href="#i-blade"/></svg></div>
               <div class="feature-text"><strong>Card Forge</strong> — design, balance, and version every card in Mythic Spellbook with a full move and passive system.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-studio">☥</div>
+              <div class="feature-dot dot-studio"><svg class="icn"><use href="#i-tree"/></svg></div>
               <div class="feature-text"><strong>Heroes & Lineages</strong> — build and connect every character through family trees, factions, and story arcs.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-studio">⚡</div>
+              <div class="feature-dot dot-studio"><svg class="icn"><use href="#i-spark"/></svg></div>
               <div class="feature-text"><strong>Sprite Forge</strong> — AI-powered sprite sheet generation for heroes, units, and cards using AutoSprite.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-studio">🦉</div>
+              <div class="feature-dot dot-studio"><svg class="icn"><use href="#i-owl"/></svg></div>
               <div class="feature-text"><strong>Athena AI</strong> — a world-aware AI co-pilot that knows every faction, card, and rule in Abraxas to accelerate creative decisions.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-studio">⏵</div>
+              <div class="feature-dot dot-studio"><svg class="icn"><use href="#i-check"/></svg></div>
               <div class="feature-text"><strong>Tasks & Ideas</strong> — built-in project management so the dev pipeline lives where the game content does.</div>
             </div>
             <div class="feature-row">
-              <div class="feature-dot dot-studio">🛡</div>
+              <div class="feature-dot dot-studio"><svg class="icn"><use href="#i-faction"/></svg></div>
               <div class="feature-text"><strong>Role-based access</strong> — admin, moderator, staff, and player tiers with invite-code onboarding and configurable permissions.</div>
             </div>
           </div>
@@ -891,7 +976,7 @@
   </section>
 
   <!-- ── Feature grid ─────────────────────────────────── -->
-  <section class="features">
+  <section class="features" id="tools">
     <div class="container">
       <div class="section-label">Everything Built In</div>
       <h2 class="section-title">Every Tool the World Needs</h2>
@@ -899,52 +984,88 @@
 
       <div class="feat-grid">
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(196,90,47,.1);border-color:rgba(196,90,47,.2)">⚔</div>
+          <div class="feat-icon" style="background:rgba(171,118,62,.1);border-color:rgba(171,118,62,.2);color:#ab763e"><svg class="icn"><use href="#i-card"/></svg></div>
           <div class="feat-name">Card Forge</div>
           <div class="feat-desc">Design every card in Mythic Spellbook. Full stat blocks, move learnsets, passive abilities, Kalon forms, and rarity tiers.</div>
-          <span class="feat-tag" style="background:rgba(196,90,47,.1);color:#c45a2f;border:1px solid rgba(196,90,47,.2)">Studio</span>
+          <span class="feat-tag" style="background:rgba(171,118,62,.1);color:#ab763e;border:1px solid rgba(171,118,62,.2)">Studio</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(164,138,210,.1);border-color:rgba(164,138,210,.2)">☥</div>
+          <div class="feat-icon" style="background:rgba(160,93,104,.1);border-color:rgba(160,93,104,.2);color:var(--aether)"><svg class="icn"><use href="#i-hero"/></svg></div>
           <div class="feat-name">Heroes & NPCs</div>
           <div class="feat-desc">A complete character management system. Bios, factions, personality, voice lines, lineage trees spanning generations.</div>
-          <span class="feat-tag" style="background:rgba(164,138,210,.1);color:var(--aether);border:1px solid rgba(164,138,210,.2)">Studio + Players</span>
+          <span class="feat-tag" style="background:rgba(160,93,104,.1);color:var(--aether);border:1px solid rgba(160,93,104,.2)">Studio + Players</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(47,155,255,.11);border-color:rgba(47,155,255,.22)">⚡</div>
+          <div class="feat-icon" style="background:rgba(255,171,0,.11);border-color:rgba(255,171,0,.22);color:var(--gold)"><svg class="icn"><use href="#i-spark"/></svg></div>
           <div class="feat-name">Sprite Forge</div>
           <div class="feat-desc">AI-generated sprite sheets for any character or unit. Athena writes the prompt from the character's own lore. Pixel art, anime, fantasy — your style.</div>
-          <span class="feat-tag" style="background:rgba(47,155,255,.11);color:var(--gold);border:1px solid rgba(47,155,255,.22)">AI-Powered</span>
+          <span class="feat-tag" style="background:rgba(255,171,0,.11);color:var(--gold);border:1px solid rgba(255,171,0,.22)">AI-Powered</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(122,154,82,.1);border-color:rgba(122,154,82,.2)">❦</div>
+          <div class="feat-icon" style="background:rgba(19,140,100,.1);border-color:rgba(19,140,100,.2);color:var(--verdant)"><svg class="icn"><use href="#i-lore"/></svg></div>
           <div class="feat-name">Lore Codex</div>
           <div class="feat-desc">World-building for Abraxas. Articles, secrets, revelations — all layered by visibility so players see what the story allows.</div>
-          <span class="feat-tag" style="background:rgba(122,154,82,.1);color:var(--verdant);border:1px solid rgba(122,154,82,.2)">Studio + Players</span>
+          <span class="feat-tag" style="background:rgba(19,140,100,.1);color:var(--verdant);border:1px solid rgba(19,140,100,.2)">Studio + Players</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(74,138,168,.1);border-color:rgba(74,138,168,.2)">🕰</div>
+          <div class="feat-icon" style="background:rgba(157,191,207,.1);border-color:rgba(157,191,207,.2);color:var(--tide)"><svg class="icn"><use href="#i-clock"/></svg></div>
           <div class="feat-name">Timeline</div>
           <div class="feat-desc">The full history of Abraxas laid out across ages. Event by event, era by era — the world's story, structured and searchable.</div>
-          <span class="feat-tag" style="background:rgba(74,138,168,.1);color:var(--tide);border:1px solid rgba(74,138,168,.2)">Studio + Players</span>
+          <span class="feat-tag" style="background:rgba(157,191,207,.1);color:var(--tide);border:1px solid rgba(157,191,207,.2)">Studio + Players</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(47,155,255,.11);border-color:rgba(47,155,255,.22)">🦉</div>
+          <div class="feat-icon" style="background:rgba(255,171,0,.11);border-color:rgba(255,171,0,.22);color:var(--gold)"><svg class="icn"><use href="#i-owl"/></svg></div>
           <div class="feat-name">Athena AI</div>
           <div class="feat-desc">A world-aware creative co-pilot that has memorised every element, faction, card, and rule in Abraxas. Ask anything — she knows the canon.</div>
-          <span class="feat-tag" style="background:rgba(47,155,255,.11);color:var(--gold);border:1px solid rgba(47,155,255,.22)">AI-Powered</span>
+          <span class="feat-tag" style="background:rgba(255,171,0,.11);color:var(--gold);border:1px solid rgba(255,171,0,.22)">AI-Powered</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(196,90,47,.1);border-color:rgba(196,90,47,.2)">❝</div>
+          <div class="feat-icon" style="background:rgba(171,118,62,.1);border-color:rgba(171,118,62,.2);color:#ab763e"><svg class="icn"><use href="#i-comment"/></svg></div>
           <div class="feat-name">Community Threads</div>
           <div class="feat-desc">General discussions and per-entity comment threads, all in one place. Players talk directly with the dev team. Athena can weigh in too.</div>
-          <span class="feat-tag" style="background:rgba(196,90,47,.1);color:#c45a2f;border:1px solid rgba(196,90,47,.2)">Community</span>
+          <span class="feat-tag" style="background:rgba(171,118,62,.1);color:#ab763e;border:1px solid rgba(171,118,62,.2)">Community</span>
         </div>
         <div class="feat-card">
-          <div class="feat-icon" style="background:rgba(122,154,82,.1);border-color:rgba(122,154,82,.2)">🐛</div>
+          <div class="feat-icon" style="background:rgba(19,140,100,.1);border-color:rgba(19,140,100,.2);color:var(--verdant)"><svg class="icn"><use href="#i-bug"/></svg></div>
           <div class="feat-name">Bug Tracker</div>
           <div class="feat-desc">Players report, devs resolve. The community's bug reports feed directly into the studio's development cycle.</div>
-          <span class="feat-tag" style="background:rgba(122,154,82,.1);color:var(--verdant);border:1px solid rgba(122,154,82,.2)">Community</span>
+          <span class="feat-tag" style="background:rgba(19,140,100,.1);color:var(--verdant);border:1px solid rgba(19,140,100,.2)">Community</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(160,93,104,.1);border-color:rgba(160,93,104,.2);color:var(--aether)"><svg class="icn"><use href="#i-monster"/></svg></div>
+          <div class="feat-name">Monster Manual</div>
+          <div class="feat-desc">Every creature in Abraxas with its stat block, weaknesses, and tags — a bestiary the studio and the community read from the same copy of.</div>
+          <span class="feat-tag" style="background:rgba(160,93,104,.1);color:var(--aether);border:1px solid rgba(160,93,104,.2)">Studio + Players</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(157,191,207,.1);border-color:rgba(157,191,207,.2);color:var(--tide)"><svg class="icn"><use href="#i-scroll"/></svg></div>
+          <div class="feat-name">Campaign Creator</div>
+          <div class="feat-desc">Author Cinder Codex campaigns page by page — branching story beats, encounters, and the reading experience players actually turn through.</div>
+          <span class="feat-tag" style="background:rgba(157,191,207,.1);color:var(--tide);border:1px solid rgba(157,191,207,.2)">Studio</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(19,140,100,.1);border-color:rgba(19,140,100,.2);color:var(--verdant)"><svg class="icn"><use href="#i-tree"/></svg></div>
+          <div class="feat-name">Lineages</div>
+          <div class="feat-desc">Family trees spanning generations. Trace any hero back through their bloodline and see how the houses of Abraxas connect.</div>
+          <span class="feat-tag" style="background:rgba(19,140,100,.1);color:var(--verdant);border:1px solid rgba(19,140,100,.2)">Studio + Players</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(171,118,62,.1);border-color:rgba(171,118,62,.2);color:var(--ember)"><svg class="icn"><use href="#i-coin"/></svg></div>
+          <div class="feat-name">World Events & Economy</div>
+          <div class="feat-desc">Resources, relics, currencies, and the world events that move them. The systems layer beneath the cards.</div>
+          <span class="feat-tag" style="background:rgba(171,118,62,.1);color:var(--ember);border:1px solid rgba(171,118,62,.2)">Studio</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(255,171,0,.11);border-color:rgba(255,171,0,.22);color:var(--gold)"><svg class="icn"><use href="#i-play"/></svg></div>
+          <div class="feat-name">Playtest Bench</div>
+          <div class="feat-desc">Try matchups before they ship. Run cards against each other and read the balance out of the result, not out of a spreadsheet.</div>
+          <span class="feat-tag" style="background:rgba(255,171,0,.11);color:var(--gold);border:1px solid rgba(255,171,0,.22)">Studio</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(171,118,62,.1);border-color:rgba(171,118,62,.2);color:#ab763e"><svg class="icn"><use href="#i-hero"/></svg></div>
+          <div class="feat-name">Gaming Profiles</div>
+          <div class="feat-desc">Link a Mythic Spellbook account to the Codex and your player profile, match history, and bug bounties follow you across both.</div>
+          <span class="feat-tag" style="background:rgba(171,118,62,.1);color:#ab763e;border:1px solid rgba(171,118,62,.2)">Community</span>
         </div>
       </div>
     </div>
@@ -964,7 +1085,7 @@
           <div class="sc-kicker">Card Forge</div>
           <h3>Design, balance, and version every card</h3>
           <p>A full engine schema — six-stat blocks, elements, factions, passives, learnsets, and Kalon forms. Auto-pricing and a live balance read-out keep the meta honest as the catalog grows in one shared workspace.</p>
-          <div class="sc-tags"><span class="sc-tag">7 card types</span><span class="sc-tag">21 elements</span><span class="sc-tag">Shared catalog</span></div>
+          <div class="sc-tags"><span class="sc-tag">16 card types</span><span class="sc-tag">21 elements</span><span class="sc-tag">Shared catalog</span></div>
         </div>
         <div class="win">
           <div class="win-bar"><span class="win-dot" style="background:#ff5f57"></span><span class="win-dot" style="background:#febc2e"></span><span class="win-dot" style="background:#28c840"></span><span class="win-title">Card Forge</span></div>
@@ -991,8 +1112,8 @@
           <div class="win-bar"><span class="win-dot" style="background:#ff5f57"></span><span class="win-dot" style="background:#febc2e"></span><span class="win-dot" style="background:#28c840"></span><span class="win-title">Sprite Forge</span></div>
           <div class="win-body">
             <div class="m-sprites">
-              <div class="m-sprite">🗡️</div><div class="m-sprite">🛡️</div><div class="m-sprite">🔥</div><div class="m-sprite">🌊</div>
-              <div class="m-sprite">🦉</div><div class="m-sprite">⚡</div><div class="m-sprite">🐉</div><div class="m-sprite">✨</div>
+              <div class="m-sprite"><svg class="icn"><use href="#i-blade"/></svg></div><div class="m-sprite"><svg class="icn"><use href="#i-faction"/></svg></div><div class="m-sprite"><svg class="icn"><use href="#i-flask"/></svg></div><div class="m-sprite"><svg class="icn"><use href="#i-globe"/></svg></div>
+              <div class="m-sprite"><svg class="icn"><use href="#i-owl"/></svg></div><div class="m-sprite"><svg class="icn"><use href="#i-spark"/></svg></div><div class="m-sprite"><svg class="icn"><use href="#i-monster"/></svg></div><div class="m-sprite"><svg class="icn"><use href="#i-star"/></svg></div>
             </div>
           </div>
         </div>
@@ -1009,7 +1130,7 @@
           <div class="win-bar"><span class="win-dot" style="background:#ff5f57"></span><span class="win-dot" style="background:#febc2e"></span><span class="win-dot" style="background:#28c840"></span><span class="win-title">Athena</span></div>
           <div class="win-body">
             <div class="m-chat">
-              <div><div class="m-owl">🦉</div><div class="m-msg ai">The Tide Oracle's magic curve is high for 6⚡ — consider trimming Resolve to keep it fair against aggro.</div></div>
+              <div><div class="m-owl"><svg class="icn"><use href="#i-owl"/></svg></div><div class="m-msg ai">The Tide Oracle's magic curve is high for 6⚡ — consider trimming Resolve to keep it fair against aggro.</div></div>
               <div class="m-msg you">Give it a passive that fits a water hero.</div>
               <div class="m-msg ai">Try <b>Undertow</b>: when it enters play, slow the highest-speed enemy for one turn.</div>
             </div>
@@ -1036,20 +1157,20 @@
 
       <div class="stat-row">
         <div class="stat">
-          <div class="stat-number">7</div>
+          <div class="stat-number">21</div>
           <div class="stat-label">Elements</div>
         </div>
         <div class="stat">
-          <div class="stat-number">∞</div>
-          <div class="stat-label">Cards in the Forge</div>
+          <div class="stat-number">41</div>
+          <div class="stat-label">Factions</div>
         </div>
         <div class="stat">
-          <div class="stat-number">4</div>
-          <div class="stat-label">Team Roles</div>
+          <div class="stat-number">16</div>
+          <div class="stat-label">Card Types</div>
         </div>
         <div class="stat">
-          <div class="stat-number">1</div>
-          <div class="stat-label">World of Abraxas</div>
+          <div class="stat-number">33</div>
+          <div class="stat-label">Studio Tools</div>
         </div>
       </div>
 
@@ -1076,13 +1197,25 @@
   <!-- ── Footer ────────────────────────────────────────── -->
   <footer>
     <div class="footer-inner">
-      <div>
-        <div class="footer-brand">Abraxas Codex</div>
-        <div class="footer-note" style="margin-top:4px">© 2026 Hidn Studios · All rights reserved</div>
+      <div class="footer-col footer-about">
+        <a href="/" class="footer-mark">
+          <span class="nav-mark"><svg class="icn"><use href="#i-mark"/></svg></span>
+          <span class="footer-brand">Abraxas Codex</span>
+        </a>
+        <p class="footer-blurb">The living world-building engine behind <em>Mythic Spellbook</em> — built in the open, alongside the people who play it.</p>
+        <div class="footer-note">© 2026 Hidn Studios · All rights reserved</div>
       </div>
-      <div class="footer-links">
+      <div class="footer-col">
+        <div class="footer-head">The World</div>
+        <a href="#platform">Platform</a>
+        <a href="#tools">Tools</a>
+        <a href="#together">Philosophy</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-head">The Codex</div>
         <a href="/login.html">Sign In</a>
-        <a href="/login.html">Sign Up</a>
+        <a href="/login.html">Create an Account</a>
+        <a href="/Mythic%20Spellbook%20Studio.html">Studio</a>
       </div>
     </div>
   </footer>
