@@ -250,7 +250,26 @@ function exportStudio() {
   URL.revokeObjectURL(url);
 }
 
+// Let World OS pages contribute collections at load time. The save path keys
+// off the storage key directly, so all a late registration needs is the
+// windowKey mapping plus a hydrate for this boot (the module-level hydrate()
+// has already run by the time a page file is parsed).
+function registerEntityKey(key, windowKey) {
+  const wk = windowKey || key.toUpperCase();
+  if (!ENTITY_KEYS.some(([k]) => k === key)) ENTITY_KEYS.push([key, wk]);
+  if (window[wk] === undefined) window[wk] = [];
+  try {
+    const raw = localStorage.getItem(STORE_PREFIX + key);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data != null) window[wk] = data;
+    }
+  } catch (e) {}
+  return wk;
+}
+
 window.useEntities = useEntities;
 window.makeId = makeId;
 window.resetStudio = resetStudio;
 window.exportStudio = exportStudio;
+window.registerEntityKey = registerEntityKey;

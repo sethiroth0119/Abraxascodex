@@ -138,7 +138,12 @@ const App = () => {
       case 'live':      return <LiveDataPage/>;
       case 'players':   return window.MSBProfilePage ? <window.MSBProfilePage/> : null;
       case 'profile':   return null; // handled as overlay
-      default: return <Dashboard setRoute={setRoute}/>;;
+      default: {
+        // World OS pages register their own routes, so they resolve here
+        // rather than needing a case added above.
+        const wos = window.renderWorldOSRoute && window.renderWorldOSRoute(route);
+        return wos || <Dashboard setRoute={setRoute}/>;
+      }
     }
   })();
 
