@@ -147,6 +147,59 @@
     return (n / 1024 / 1024).toFixed(1) + ' MB';
   }
 
+  function nameFromUrl(url) {
+    try {
+      const p = new URL(url, location.href).pathname.split('/').pop() || 'image';
+      return decodeURIComponent(p).replace(/\.[^.]+$/, '') || 'image';
+    } catch (e) { return 'image'; }
+  }
+
+  // Load a URL just to confirm it is an image and learn its dimensions. This
+  // works even when the host forbids cross-origin *reads*, because <img> is
+  // allowed to display what canvas is not allowed to inspect.
+  function probeImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error('That URL did not load as an image'));
+      img.src = url;
+    });
+  }
+
+  /* Take an image by URL.
+     Preferred path: fetch it, downscale it and store it like an upload, so the
+     world keeps working if the original host disappears.
+     Fallback: many hosts refuse cross-origin reads, which taints the canvas and
+     makes toDataURL throw. Rather than fail, keep it as a live link — that
+     costs no storage at all, but it does depend on the host staying up. */
+  async function processUrl(rawUrl, presetName) {
+    const url = String(rawUrl || '').trim();
+    if (!url) throw new Error('Enter an image URL');
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+      throw new Error('URL must start with http:// or https://');
+    }
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      if (!/^image\//.test(blob.type)) throw new Error('Not an image');
+      const out = await processImage(new File([blob], nameFromUrl(url), { type: blob.type }), presetName);
+      return { ...out, sourceUrl: url };
+    } catch (e) {
+      const dim = await probeImage(url);          // throws if it is not an image at all
+      return {
+        url, remote: true, name: nameFromUrl(url),
+        width: dim.width, height: dim.height,
+        naturalWidth: dim.width, naturalHeight: dim.height,
+        bytes: 0,
+      };
+    }
+  }
+
+  // Every consumer should read an image through this — a record is either an
+  // uploaded data URL or a linked remote URL.
+  const imageSrc = (img) => (img && (img.dataUrl || img.url)) || '';
+
   // Open a file picker and return processed images.
   function pickImages({ preset = 'art', multiple = false } = {}) {
     return new Promise(resolve => {
@@ -168,7 +221,7 @@
   }
 
   Object.assign(WorldOS, {
-    processImage, pickImages, prettyBytes, IMAGE_PRESETS,
+    processImage, processUrl, probeImage, imageSrc, pickImages, prettyBytes, IMAGE_PRESETS,
 
     /* ── cross-entity linking ──────────────────────────────────────────
        World Anvil's real power is that everything references everything.

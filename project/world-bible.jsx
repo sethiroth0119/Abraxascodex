@@ -120,7 +120,7 @@
               const secrets = (a.secrets || []).length;
               return (
                 <div key={a.id} className="wb-card" onClick={() => setOpenId(a.id)}>
-                  {a.cover && a.cover.dataUrl && <div className="wb-card-cover"><img src={a.cover.dataUrl} alt=""/></div>}
+                  {window.WorldOS.imageSrc(a.cover) && <div className="wb-card-cover"><img src={window.WorldOS.imageSrc(a.cover)} alt=""/></div>}
                   <div className="wb-card-body">
                     <div className="wb-card-kind">{t.name}</div>
                     <div className="wb-card-title">{a.title}</div>

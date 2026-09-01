@@ -19,6 +19,9 @@
     const [sel, setSel] = useState(null);
     const [busy, setBusy] = useState(false);
     const [over, setOver] = useState(false);
+    const [urlOpen, setUrlOpen] = useState(false);
+    const [url, setUrl] = useState('');
+    const [urlErr, setUrlErr] = useState('');
     const U = UI();
 
     const live = useMemo(() => (assets || []).filter(a => a && !a._deleted), [assets]);
@@ -32,6 +35,7 @@
     });
 
     const totalBytes = live.reduce((n, a) => n + ((a.image && a.image.bytes) || 0), 0);
+    const linkedCount = live.filter(a => a.image && a.image.remote).length;
 
     const ingest = useCallback(async (files) => {
       if (!files || !files.length) return;
@@ -66,6 +70,23 @@
       setBusy(false);
     };
 
+    const addByUrl = async () => {
+      if (!url.trim()) return;
+      setBusy(true); setUrlErr('');
+      try {
+        const image = await window.WorldOS.processUrl(url, 'art');
+        setAssets((assets || []).concat({
+          id: window.makeId ? window.makeId() : 'asset_' + Date.now(),
+          name: image.name || 'linked image',
+          category: 'Other', tags: [], notes: '', links: [],
+          image, addedAt: new Date().toISOString(),
+        }));
+        setUrl(''); setUrlOpen(false);
+      } catch (e) {
+        setUrlErr(e.message || 'Could not load that URL');
+      } finally { setBusy(false); }
+    };
+
     const update = (id, patch) => setAssets((assets || []).map(a => a.id === id ? { ...a, ...patch } : a));
     const remove = (id) => { setAssets((assets || []).map(a => a.id === id ? { ...a, _deleted: true } : a)); setSel(null); };
 
@@ -80,10 +101,11 @@
           <div>
             <h1 className="page-title">Asset Library</h1>
             <div className="page-sub">
-              {live.length} image{live.length === 1 ? '' : 's'} · {window.WorldOS.prettyBytes(totalBytes)} stored
+              {live.length} image{live.length === 1 ? '' : 's'} · {window.WorldOS.prettyBytes(totalBytes)} stored{linkedCount > 0 ? ` · ${linkedCount} linked` : ''}
             </div>
           </div>
           <div className="page-actions">
+            <button className="btn" onClick={() => setUrlOpen(true)}>+ Link a URL</button>
             <button className="btn btn-gold" onClick={browse} disabled={busy}>
               {busy ? 'Processing…' : '+ Upload images'}
             </button>
@@ -116,7 +138,7 @@
           <div className="asset-grid">
             {shown.map(a => (
               <div key={a.id} className={`asset-tile ${sel === a.id ? 'sel' : ''}`} onClick={() => setSel(a.id)}>
-                <img src={a.image.dataUrl} alt={a.name} loading="lazy"/>
+                <img src={window.WorldOS.imageSrc(a.image)} alt={a.name} loading="lazy"/>
                 <div className="asset-tile-name">{a.name}</div>
               </div>
             ))}
@@ -126,10 +148,29 @@
 
         {over && <div className="asset-dropveil">Drop to add to the library</div>}
 
+        <U.Modal open={urlOpen} title="Link an image by URL" onClose={() => { setUrlOpen(false); setUrlErr(''); }}>
+          <U.Field label="Image URL">
+            <U.Text value={url} onChange={e => setUrl(e.target.value)}
+              placeholder="https://example.com/portrait.jpg"
+              onKeyDown={e => { if (e.key === 'Enter') addByUrl(); }}/>
+          </U.Field>
+          <div className="wos-dim" style={{ fontSize: 12, lineHeight: 1.6 }}>
+            The image is fetched and compressed like an upload where the host allows it.
+            Where it does not, it stays a live link — that uses no storage, but it breaks
+            if the original ever moves.
+          </div>
+          {urlErr && <div className="wos-err">{urlErr}</div>}
+          <div className="wos-modal-actions">
+            <button className="btn btn-gold" onClick={addByUrl} disabled={!url.trim() || busy}>
+              {busy ? 'Loading…' : 'Add image'}
+            </button>
+          </div>
+        </U.Modal>
+
         <U.Modal open={!!current} title={current ? current.name : ''} onClose={() => setSel(null)} wide>
           {current && (
             <div className="asset-detail">
-              <div className="asset-detail-img"><img src={current.image.dataUrl} alt={current.name}/></div>
+              <div className="asset-detail-img"><img src={window.WorldOS.imageSrc(current.image)} alt={current.name}/></div>
               <div className="asset-detail-form">
                 <U.Field label="Name">
                   <U.Text value={current.name} onChange={e => update(current.id, { name: e.target.value })}/>
@@ -148,9 +189,12 @@
                   <U.Area value={current.notes || ''} onChange={e => update(current.id, { notes: e.target.value })}/>
                 </U.Field>
                 <div className="asset-detail-meta wos-dim">
-                  {current.image.width}×{current.image.height} · {window.WorldOS.prettyBytes(current.image.bytes)}
-                  {current.image.naturalWidth > current.image.width &&
+                  {current.image.width}×{current.image.height} · {current.image.remote
+                    ? <span className="wos-remote-tag">linked — no storage used</span>
+                    : window.WorldOS.prettyBytes(current.image.bytes)}
+                  {!current.image.remote && current.image.naturalWidth > current.image.width &&
                     <> · resized from {current.image.naturalWidth}×{current.image.naturalHeight}</>}
+                  {current.image.remote && <div style={{marginTop:4,wordBreak:'break-all'}}>{current.image.url}</div>}
                 </div>
                 <button className="btn btn-ghost" onClick={() => remove(current.id)}>Delete image</button>
               </div>

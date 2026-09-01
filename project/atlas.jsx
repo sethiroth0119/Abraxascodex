@@ -61,8 +61,8 @@
               return (
                 <div key={m.id} className="atlas-card" onClick={() => setActiveId(m.id)}>
                   <div className="atlas-thumb">
-                    {m.image && m.image.dataUrl
-                      ? <img src={m.image.dataUrl} alt=""/>
+                    {window.WorldOS.imageSrc(m.image)
+                      ? <img src={window.WorldOS.imageSrc(m.image)} alt=""/>
                       : <div className="atlas-thumb-empty">no image</div>}
                   </div>
                   <div className="atlas-card-body">
@@ -196,7 +196,7 @@
             <div className="atlas-surface"
                  style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
                  onClick={onSurfaceClick}>
-              <img src={map.image.dataUrl} alt={map.name} className="atlas-img" draggable={false}/>
+              <img src={window.WorldOS.imageSrc(map.image)} alt={map.name} className="atlas-img" draggable={false}/>
               {visible.map(p => {
                 const k = kindOf(p.kind);
                 return (

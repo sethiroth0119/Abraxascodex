@@ -16,6 +16,18 @@
     const [over, setOver] = useState(false);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState('');
+    const [url, setUrl] = useState('');
+
+    const takeUrl = async () => {
+      if (!url.trim()) return;
+      setBusy(true); setErr('');
+      try {
+        const img = await window.WorldOS.processUrl(url, preset);
+        onChange(img); setUrl('');
+      } catch (e) {
+        setErr(e.message || 'Could not load that URL');
+      } finally { setBusy(false); }
+    };
 
     const take = useCallback(async (file) => {
       if (!file) return;
@@ -52,8 +64,8 @@
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') browse(); }}
         >
-          {value && value.dataUrl
-            ? <img src={value.dataUrl} alt="" className="wos-drop-img"/>
+          {window.WorldOS.imageSrc(value)
+            ? <img src={window.WorldOS.imageSrc(value)} alt="" className="wos-drop-img"/>
             : <div className="wos-drop-hint">
                 <div className="wos-drop-icon">+</div>
                 <div>{busy ? 'Processing…' : label}</div>
@@ -61,11 +73,21 @@
               </div>}
           {busy && <div className="wos-drop-busy">Processing…</div>}
         </div>
-        {value && value.dataUrl && (
+
+        {/* link an image instead of uploading one */}
+        <div className="wos-url-row" onClick={(e) => e.stopPropagation()}>
+          <input className="field-input" value={url} placeholder="…or paste an image URL"
+            onChange={e => setUrl(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); takeUrl(); } }}/>
+          <button className="btn" onClick={takeUrl} disabled={!url.trim() || busy}>Link</button>
+        </div>
+
+        {window.WorldOS.imageSrc(value) && (
           <div className="wos-drop-meta">
             <span>{value.width}×{value.height}</span>
-            <span>{window.WorldOS.prettyBytes(value.bytes)}</span>
-            {value.naturalWidth > value.width && (
+            <span>{value.remote ? 'linked' : window.WorldOS.prettyBytes(value.bytes)}</span>
+            {value.remote && <span className="wos-remote-tag">no storage used</span>}
+            {!value.remote && value.naturalWidth > value.width && (
               <span className="wos-dim">resized from {value.naturalWidth}×{value.naturalHeight}</span>
             )}
             {clearable && (
@@ -211,6 +233,9 @@
     .wos-drop-sub{font-size:11px;color:var(--ink-faint);margin-top:4px}
     .wos-drop-busy{position:absolute;inset:0;display:grid;place-items:center;background:rgba(9,9,10,.72);color:var(--gold-bright);font-size:13px}
     .wos-drop-meta{display:flex;gap:12px;align-items:center;font-size:11px;color:var(--ink-dim);margin-top:6px;flex-wrap:wrap}
+    .wos-url-row{display:flex;gap:8px;margin-top:8px}
+    .wos-url-row .field-input{flex:1}
+    .wos-remote-tag{color:var(--verdant)}
 
     .wos-modal-back{position:fixed;inset:0;background:rgba(9,9,10,.78);backdrop-filter:blur(3px);
       z-index:800;display:grid;place-items:center;padding:24px}
