@@ -172,7 +172,7 @@ const ProfilePage = ({ onClose }) => {
           )}
           {game && (
             <div style={{ marginTop:18, border:'1px solid var(--rule)', borderRadius:10, overflow:'hidden',
-              background:'linear-gradient(180deg, rgba(47,155,255,.06), transparent)' }}>
+              background:'linear-gradient(180deg, rgba(255,171,0,.06), transparent)' }}>
               <div style={{ display:'flex', divide:'x', borderBottom:'1px solid var(--rule)' }}>
                 <StatCell label="Cinder"  value={_pfmt(game.cinder)} glyph="🔥" color="var(--ember)"/>
                 <StatCell label="Aza"     value={_pfmt(game.aza)}    glyph="🪙" color="var(--gold-bright)"/>
@@ -191,7 +191,7 @@ const ProfilePage = ({ onClose }) => {
           )}
           {game === null && (
             <div style={{ marginTop:18, padding:'16px', border:'1px solid var(--rule)', borderRadius:10,
-              background:'rgba(47,155,255,.05)' }}>
+              background:'rgba(255,171,0,.05)' }}>
               <div style={{ fontFamily:'var(--display)', fontSize:14, color:'var(--ink)', marginBottom:4 }}>🎴 Connect your Mythic Spellbook account</div>
               <div style={{ fontSize:12, color:'var(--ink-faint)', marginBottom:12, lineHeight:1.5 }}>
                 Sign in with your game login to show your Cinder, Aza Coin, Mythic Token, wins, and strongest unit right here.

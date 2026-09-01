@@ -53,13 +53,13 @@ class PageErrorBoundary extends React.Component {
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "dark",
   "density": "cozy",
-  "accent": "#2f9bff",
+  "accent": "#ffab00",
   "sidebar": "expanded",
   "frame": "gilded"
 }/*EDITMODE-END*/;
 
 const ACCENTS = [
-  '#2f9bff', // engine blue
+  '#ffab00', // engine blue
   '#22d3ee', // cyan
   '#a48ad2', // aether
   '#3fb950', // verdant

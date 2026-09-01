@@ -331,7 +331,7 @@ const BugsPage = () => {
                   </div>
 
                   {/* Bug Bounty — reward the reporter's Mythic Spellbook account with Cinder */}
-                  <div style={{marginBottom:14,padding:12,borderRadius:6,border:'1px solid var(--rule)',background:'rgba(47,155,255,.05)'}}>
+                  <div style={{marginBottom:14,padding:12,borderRadius:6,border:'1px solid var(--rule)',background:'rgba(255,171,0,.05)'}}>
                     <div className="field-label" style={{marginBottom:6}}>🔥 Bug Bounty</div>
                     {open.reward && open.reward.total ? (
                       <div style={{fontSize:13,color:'var(--verdant)',marginBottom:8}}>
@@ -459,7 +459,7 @@ const BugsPage = () => {
               {/* Reward eligibility — tie the report to a Mythic Spellbook account */}
               <div style={{marginBottom:16,padding:'10px 14px',borderRadius:6,fontSize:12.5,lineHeight:1.5,
                 border:'1px solid var(--rule)',
-                background: msbId ? 'rgba(63,185,80,.08)' : 'rgba(47,155,255,.06)',
+                background: msbId ? 'rgba(63,185,80,.08)' : 'rgba(255,171,0,.06)',
                 color: msbId ? 'var(--verdant)' : 'var(--ink-dim)'}}>
                 {msbId
                   ? <>✓ Filing as your Mythic Spellbook account (<b>{msbId.email}</b>) — eligible for Cinder bug bounties.</>

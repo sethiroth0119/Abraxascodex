@@ -9,22 +9,26 @@
   <link rel="apple-touch-icon" href="favicon.png?v=2"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Cormorant+SC:wght@400;600&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --gold: #cc2222;
-      --gold-bright: #f03030;
-      --ink: #e8f0e8;
-      --ink-dim: #9ab89a;
-      --ink-faint: #4a6050;
-      --parchment: #050805;
-      --parchment-2: #090e09;
-      --vellum: #162016;
-      --rule: #1a281a;
-      --ember: #e06820;
-      --serif: "Cormorant Garamond", serif;
-      --display: "Cormorant SC", serif;
-      --body: "Inter Tight", system-ui, sans-serif;
+      /* Palette mirrors worldanvil.com’s own design tokens */
+      --gold: #ffab00;         /* WA --highlight        */
+      --gold-bright: #ffd37a;  /* WA --highlight-light  */
+      --gold-deep: #ba9d43;
+      --guild: #af0000;        /* WA --guild-red        */
+      --guild-deep: #7d0f0f;
+      --ink: #dadada;          /* WA --off-white        */
+      --ink-dim: #9c9b9b;      /* WA --light-gray       */
+      --ink-faint: #8a8a8a;
+      --parchment: #09090a;    /* WA --background-terror */
+      --parchment-2: #0d0f11;  /* WA --darkest-terror   */
+      --vellum: #191a1d;       /* WA --dark-terror      */
+      --rule: #2e3133;         /* WA --light-terror     */
+      --ember: #ab763e;        /* WA --orange           */
+      --serif: "Lato", system-ui, sans-serif;
+      --display: "Oswald", system-ui, sans-serif;
+      --body: "Lato", system-ui, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -283,7 +287,7 @@
 
         <!-- Connect a Mythic Spellbook game account -->
         <div id="mg-section" style="margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08)">
-          <div onclick="toggleMg()" style="cursor:pointer; font-size:13px; color:#63b8ff; text-align:center; user-select:none">
+          <div onclick="toggleMg()" style="cursor:pointer; font-size:13px; color:#ffd37a; text-align:center; user-select:none">
             🎴 Log in with your Mythic Spellbook game account
           </div>
           <div id="mg-form" style="display:none; margin-top:12px">
