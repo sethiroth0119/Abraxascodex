@@ -63,7 +63,7 @@ const ElementsPage = () => {
                onClick={()=>{setSel(e.id); setEditing(false);}}>
             <div className="elem-hue" style={{background: e.color, boxShadow:`0 0 12px ${e.color}`}}/>
             <div className="elem-icon">{e.icon}</div>
-            <div className="elem-name" style={{color:'var(--ink)'}}>{e.name}</div>
+            <div className="elem-name" style={{color:'var(--ink)'}}>{e.name}{window.WorldOSBadge && <window.WorldOSBadge kind="element" id={e.id}/>}</div>
             <div className="elem-strong">
               {e.strongVs.map(s => {
                 const t = E.find(x=>x.id===s);

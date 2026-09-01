@@ -34,7 +34,7 @@ const RosterCard = ({ h, onClick }) => {
           <span className="pill" style={{borderColor:e?.color,color:e?.color}}>{e?.icon}</span>
           <span style={{marginLeft:'auto'}} className="pill">{h.kind}</span>
         </div>
-        <div className="hero-name" style={{fontSize:16,marginTop:2}}>{h.name}</div>
+        <div className="hero-name" style={{fontSize:16,marginTop:2}}>{h.name}{window.WorldOSBadge && <window.WorldOSBadge kind="hero" id={h.id}/>}</div>
         <div className="hero-title" style={{fontSize:12}}>{h.title}</div>
         <div style={{marginTop:8,fontFamily:'var(--serif)',fontSize:12.5,color:'var(--ink-dim)',fontStyle:'italic',
           display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',lineHeight:1.45}}>

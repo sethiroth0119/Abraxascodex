@@ -78,6 +78,12 @@
      would blow the storage quota in a couple of uploads.
      ====================================================================== */
 
+  // backlink count cache — invalidated by a change in collection sizes, and
+  // eagerly whenever the studio reports a data change (an edit that keeps the
+  // length the same, e.g. retargeting a link, would not move the signature).
+  let _blCache = null, _blSig = '';
+  window.addEventListener('studio:data-change', () => { _blCache = null; });
+
   const IMAGE_PRESETS = {
     thumb:   { max: 400,  quality: 0.80 },
     art:     { max: 1600, quality: 0.82 },   // portraits, article headers
@@ -306,10 +312,48 @@
       return out;
     },
 
+    /* One pass over every collection, counting how many things point at each
+       entity. A list of 200 heroes each asking backlinks() individually would
+       rescan the world 200 times; this scans once and is reused.
+       Cached against a cheap signature of the collection lengths. */
+    backlinkMap() {
+      const wks = ['WORLD_ARTICLES', 'WORLD_RELATIONSHIPS', 'WORLD_MAP_PINS',
+                   'WORLD_QUESTS', 'WORLD_CHRON_EVENTS', 'WORLD_ASSETS'];
+      const sig = wks.map(k => (Array.isArray(window[k]) ? window[k].length : 0)).join(',');
+      if (_blCache && _blSig === sig) return _blCache;
+
+      const counts = {};
+      const bump = (ref) => {
+        if (!ref || !ref.kind || !ref.id) return;
+        const k = ref.kind + ':' + ref.id;
+        counts[k] = (counts[k] || 0) + 1;
+      };
+      const live = (wk) => (Array.isArray(window[wk]) ? window[wk] : []).filter(r => r && !r._deleted);
+
+      live('WORLD_ARTICLES').forEach(a => (a.links || []).forEach(bump));
+      live('WORLD_RELATIONSHIPS').forEach(r => { bump(r.from); bump(r.to); });
+      live('WORLD_MAP_PINS').forEach(p => (p.links || []).forEach(bump));
+      live('WORLD_QUESTS').forEach(q => {
+        const seen = new Set();
+        const once = (ref) => {
+          if (!ref || !ref.kind) return;
+          const k = ref.kind + ':' + ref.id;
+          if (seen.has(k)) return;          // a quest counts once per entity,
+          seen.add(k); bump(ref);           // however many objectives mention it
+        };
+        (q.links || []).forEach(once);
+        (q.objectives || []).forEach(o => (o.links || []).forEach(once));
+      });
+      live('WORLD_CHRON_EVENTS').forEach(e => (e.links || []).forEach(bump));
+      live('WORLD_ASSETS').forEach(a => (a.links || []).forEach(bump));
+
+      _blCache = counts; _blSig = sig;
+      return counts;
+    },
+
     backlinkCount(ref) {
-      const b = WorldOS.backlinks(ref);
-      return b.articles.length + b.relationships.length + b.pins.length
-           + b.quests.length + b.events.length + b.assets.length;
+      if (!ref || !ref.kind || !ref.id) return 0;
+      return WorldOS.backlinkMap()[ref.kind + ':' + ref.id] || 0;
     },
   });
 

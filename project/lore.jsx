@@ -105,7 +105,7 @@ const LorePage = () => {
             <div className="toc-h">Codex</div>
             {filtered.map(e => (
               <div key={e.id} className={`toc-item ${sel===e.id?'active':''}`} onClick={()=>{setSel(e.id);setEditing(false);}}>
-                {e.title}
+                {e.title}{window.WorldOSBadge && <window.WorldOSBadge kind="lore" id={e.id}/>}
                 <div style={{fontSize:10,color:'var(--ink-faint)',marginTop:2,fontFamily:'var(--mono)'}}>{e.type}</div>
               </div>
             ))}

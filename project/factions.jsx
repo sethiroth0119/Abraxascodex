@@ -53,7 +53,7 @@ const FactionsPage = () => {
                          boxShadow: f.id===sel ? `0 0 0 1px ${f.color}, 0 10px 30px -10px rgba(0,0,0,.6)` : 'none'}}>
               <div className="fac-hue" style={{background:f.color, boxShadow:`0 0 12px ${f.color}`}}/>
               <div className="fac-icon">{f.icon}</div>
-              <div className="fac-name">{f.name}</div>
+              <div className="fac-name">{f.name}{window.WorldOSBadge && <window.WorldOSBadge kind="faction" id={f.id}/>}</div>
               <div className="fac-desc">{f.desc}</div>
             </div>
           ))}
