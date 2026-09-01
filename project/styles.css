@@ -1,9 +1,9 @@
 /* Mythic Spellbook Studio — engine console (Unreal-style: dark slate + electric blue) */
 :root{
   /* Palette mirrors worldanvil.com's own design tokens */
-  --ink: #dadada;              /* WA --off-white        */
-  --ink-dim: #9c9b9b;          /* WA --light-gray       */
-  --ink-faint: #8a8a8a;        /* lifted to clear 4.5:1 on panels */
+  --ink: #ffffff;              /* white, as requested; WA ships --off-white #dadada */
+  --ink-dim: #cfcfcf;          /* lifted from WA --light-gray #9c9b9b for readability */
+  --ink-faint: #b0b0b0;        /* lifted again — labels and meta were the worst offenders */
   --parchment: #09090a;        /* WA --background-terror */
   --parchment-2: #0d0f11;      /* WA --darkest-terror   */
   --parchment-3: #191a1d;      /* WA --dark-terror      */
@@ -37,6 +37,30 @@
 }
 
 *{box-sizing:border-box}
+/* native controls (scrollbars, date pickers, autofill) follow the dark theme */
+:root{color-scheme:dark}
+
+/* FORM CONTROLS — base colours for every field, classed or not */
+input, textarea, select, button{
+  font-family:inherit;
+  color:var(--ink);
+}
+input, textarea, select{
+  background-color:var(--parchment-2);
+  caret-color:var(--gold);
+}
+input::placeholder, textarea::placeholder{color:var(--ink-faint);opacity:1}
+/* dropdown options render with system colours on Windows without this */
+select option{background:var(--parchment-2);color:var(--ink)}
+/* Chrome autofill forces its own near-white fill and black text */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--ink);
+  -webkit-box-shadow:0 0 0 1000px var(--parchment-2) inset;
+  caret-color:var(--gold);
+}
+::selection{background:rgba(255,171,0,.32);color:#fff}
 /* Global readability scale: the type system uses many hardcoded px sizes (10–13px);
    zoom scales text + spacing uniformly so the layout stays proportional. */
 html{zoom:1.1}
