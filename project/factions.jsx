@@ -123,6 +123,8 @@ const FactionsPage = () => {
                   })}
                 </div>
               )}
+
+              {window.WorldOSPanel && <window.WorldOSPanel kind="faction" id={selF.id} name={selF.name}/>}
             </div>
           </div>
         )}

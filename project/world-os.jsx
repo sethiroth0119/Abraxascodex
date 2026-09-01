@@ -258,6 +258,59 @@
       if (!ref) return null;
       return WorldOS.index().find(e => e.kind === ref.kind && e.id === ref.id) || null;
     },
+
+    /* ── backlinks ─────────────────────────────────────────────────────
+       The forward direction (an article naming a hero) is stored on the
+       article. This walks every World OS collection to answer the reverse
+       question — "what refers to THIS?" — which is what makes an existing
+       Heroes or Factions page suddenly know about its own world.           */
+    backlinks(ref) {
+      const out = { articles: [], relationships: [], pins: [], quests: [], events: [], assets: [] };
+      if (!ref || !ref.kind || !ref.id) return out;
+      const hits = (l) => Array.isArray(l) && l.some(x => x && x.kind === ref.kind && x.id === ref.id);
+      const live = (wk) => (Array.isArray(window[wk]) ? window[wk] : []).filter(r => r && !r._deleted);
+
+      for (const a of live('WORLD_ARTICLES')) {
+        if (hits(a.links)) out.articles.push({ id: a.id, name: a.title, meta: a.template, route: 'worldBible' });
+      }
+      for (const r of live('WORLD_RELATIONSHIPS')) {
+        const isFrom = r.from && r.from.kind === ref.kind && r.from.id === ref.id;
+        const isTo   = r.to   && r.to.kind   === ref.kind && r.to.id   === ref.id;
+        if (!isFrom && !isTo) continue;
+        const other = isFrom ? r.to : r.from;
+        const hit = WorldOS.resolve(other);
+        out.relationships.push({
+          id: r.id, type: r.type, direction: isFrom ? 'out' : 'in',
+          otherName: hit ? hit.name : (other && other.id), note: r.note, route: 'relationships',
+        });
+      }
+      const mapName = (id) => {
+        const m = live('WORLD_MAPS').find(x => x.id === id);
+        return m ? m.name : 'a map';
+      };
+      for (const p of live('WORLD_MAP_PINS')) {
+        if (hits(p.links)) out.pins.push({ id: p.id, name: p.name, meta: mapName(p.mapId), route: 'atlas' });
+      }
+      for (const q of live('WORLD_QUESTS')) {
+        const inObjectives = (q.objectives || []).some(o => hits(o.links));
+        if (hits(q.links) || inObjectives) {
+          out.quests.push({ id: q.id, name: q.title, meta: q.status, route: 'quests' });
+        }
+      }
+      for (const e of live('WORLD_CHRON_EVENTS')) {
+        if (hits(e.links)) out.events.push({ id: e.id, name: e.title, meta: String(e.year ?? ''), route: 'chronicle' });
+      }
+      for (const a of live('WORLD_ASSETS')) {
+        if (hits(a.links)) out.assets.push({ id: a.id, name: a.name, image: a.image, route: 'assets' });
+      }
+      return out;
+    },
+
+    backlinkCount(ref) {
+      const b = WorldOS.backlinks(ref);
+      return b.articles.length + b.relationships.length + b.pins.length
+           + b.quests.length + b.events.length + b.assets.length;
+    },
   });
 
   /* ── route lookup used by app.jsx ───────────────────────────────────── */

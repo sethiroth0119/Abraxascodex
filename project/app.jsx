@@ -102,6 +102,10 @@ const App = () => {
     if (route === 'profile') { setShowProfile(true); setRoute('dashboard'); }
   }, [route]);
 
+  // Let any page navigate — World OS context panels use this to jump from a
+  // hero to the article, quest or map pin that refers to them.
+  React.useEffect(() => { window.studioNavigate = setRoute; }, []);
+
   const page = (() => {
     switch(route){
       case 'dashboard': return <Dashboard setRoute={setRoute}/>;

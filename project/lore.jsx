@@ -253,6 +253,8 @@ const LorePage = () => {
                   style={{marginTop:8,fontSize:11,padding:'6px 8px'}}/>}
               </div>
             </div>
+
+            {window.WorldOSPanel && <window.WorldOSPanel kind="lore" id={current.id} name={current.title}/>}
           </aside>
         </div>
       )}

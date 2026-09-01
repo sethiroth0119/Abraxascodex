@@ -149,6 +149,7 @@ const ElementsPage = () => {
               <div style={{marginTop:14,fontFamily:'var(--serif)',fontStyle:'italic',color:'var(--ink-dim)',fontSize:13,lineHeight:1.5}}>
                 {cardCount(sample.id)} cards reference {sample.name}. Drives every elemental interaction in battle.
               </div>
+              {window.WorldOSPanel && <window.WorldOSPanel kind="element" id={sample.id} name={sample.name}/>}
             </div>
           </div>
         </div>

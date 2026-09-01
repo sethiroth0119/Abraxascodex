@@ -275,6 +275,8 @@ const HeroDetail = ({ hero, heroes, onClose, onChange, onSelect, onDelete, start
                 );
               })}
             </Sec>
+
+            {window.WorldOSPanel && <window.WorldOSPanel kind="hero" id={hero.id} name={hero.name}/>}
           </main>
         </div>
       </div>
