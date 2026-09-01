@@ -34,8 +34,15 @@
           || (a.tags || []).some(t => t.toLowerCase().includes(s));
     });
 
-    const totalBytes = live.reduce((n, a) => n + ((a.image && a.image.bytes) || 0), 0);
+    // only images still held inline count against the browser/JSON budget —
+    // stored and linked ones cost nothing there
+    const totalBytes = live.reduce((n, a) => {
+      const im = a.image;
+      if (!im || im.stored || im.remote) return n;
+      return n + (im.bytes || 0);
+    }, 0);
     const linkedCount = live.filter(a => a.image && a.image.remote).length;
+    const storedCount = live.filter(a => a.image && a.image.stored).length;
 
     const ingest = useCallback(async (files) => {
       if (!files || !files.length) return;
@@ -43,7 +50,7 @@
       const made = [];
       for (const f of files) {
         try {
-          const image = await window.WorldOS.processImage(f, 'art');
+          const image = await window.WorldOS.storeImage(await window.WorldOS.processImage(f, 'art'), 'library');
           made.push({
             id: window.makeId ? window.makeId() : 'asset_' + Date.now() + '_' + made.length,
             name: (f.name || 'image').replace(/\.[^.]+$/, ''),
@@ -58,7 +65,9 @@
 
     const browse = async () => {
       setBusy(true);
-      const imgs = await window.WorldOS.pickImages({ preset: 'art', multiple: true });
+      const picked = await window.WorldOS.pickImages({ preset: 'art', multiple: true });
+      const imgs = [];
+      for (const p of picked) imgs.push(await window.WorldOS.storeImage(p, 'library'));
       if (imgs.length) {
         setAssets((assets || []).concat(imgs.map((image, i) => ({
           id: window.makeId ? window.makeId() : 'asset_' + Date.now() + '_' + i,
@@ -74,7 +83,7 @@
       if (!url.trim()) return;
       setBusy(true); setUrlErr('');
       try {
-        const image = await window.WorldOS.processUrl(url, 'art');
+        const image = await window.WorldOS.storeImage(await window.WorldOS.processUrl(url, 'art'), 'library');
         setAssets((assets || []).concat({
           id: window.makeId ? window.makeId() : 'asset_' + Date.now(),
           name: image.name || 'linked image',
@@ -88,7 +97,12 @@
     };
 
     const update = (id, patch) => setAssets((assets || []).map(a => a.id === id ? { ...a, ...patch } : a));
-    const remove = (id) => { setAssets((assets || []).map(a => a.id === id ? { ...a, _deleted: true } : a)); setSel(null); };
+    const remove = (id) => {
+      const victim = live.find(a => a.id === id);
+      if (victim) window.WorldOS.removeStoredImage(victim.image);   // no-op unless it was stored
+      setAssets((assets || []).map(a => a.id === id ? { ...a, _deleted: true } : a));
+      setSel(null);
+    };
 
     const current = live.find(a => a.id === sel) || null;
 
@@ -101,7 +115,7 @@
           <div>
             <h1 className="page-title">Asset Library</h1>
             <div className="page-sub">
-              {live.length} image{live.length === 1 ? '' : 's'} · {window.WorldOS.prettyBytes(totalBytes)} stored{linkedCount > 0 ? ` · ${linkedCount} linked` : ''}
+              {live.length} image{live.length === 1 ? '' : 's'}{storedCount > 0 ? ` · ${storedCount} in the cloud` : ''}{linkedCount > 0 ? ` · ${linkedCount} linked` : ''}{totalBytes > 0 ? ` · ${window.WorldOS.prettyBytes(totalBytes)} inline` : ''}
             </div>
           </div>
           <div className="page-actions">
@@ -124,8 +138,9 @@
 
         {totalBytes > 3.5 * 1024 * 1024 && (
           <div className="asset-warn">
-            The library is using {window.WorldOS.prettyBytes(totalBytes)}. Browser storage is
-            capped near 5 MB per site — prune older images, or keep the largest art elsewhere.
+            {window.WorldOS.prettyBytes(totalBytes)} of images are still held inline rather than in
+            cloud storage, and that counts against a cap near 5 MB. These were added before storage
+            was available, or while it was unreachable — re-upload them to move them across.
           </div>
         )}
 

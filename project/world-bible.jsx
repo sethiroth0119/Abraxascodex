@@ -273,7 +273,7 @@
             <div className="panel"><div className="panel-body">
               <div className="wos-side-head">Cover image</div>
               <U.ImageDrop value={article.cover} onChange={v => update(article.id, { cover: v })}
-                preset="art" height={150} label="Drop a cover"/>
+                preset="art" height={150} folder="covers" label="Drop a cover"/>
             </div></div>
             <div className="panel" style={{ marginTop: 12 }}><div className="panel-body">
               <div className="wos-side-head">Filing</div>

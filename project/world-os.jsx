@@ -202,9 +202,81 @@
     }
   }
 
-  // Every consumer should read an image through this — a record is either an
-  // uploaded data URL or a linked remote URL.
-  const imageSrc = (img) => (img && (img.dataUrl || img.url)) || '';
+  // Every consumer should read an image through this — a record is either a
+  // stored file URL, a linked remote URL, or an inline data URL.
+  const imageSrc = (img) => (img && (img.url || img.dataUrl)) || '';
+
+  /* ==========================================================================
+     STORAGE
+     Images used to live as base64 inside the record, which meant they rode
+     along in the studio_collections JSON column — the whole collection
+     re-upserted on every save, against a ~5MB browser cap.
+
+     They now go to the world-assets bucket and the record keeps only the
+     public URL, so a collection row stays small no matter how much art the
+     world holds. Everything degrades: no Supabase, no permission, or a failed
+     upload all fall back to the inline data URL, which is exactly how it
+     behaved before.
+     ====================================================================== */
+
+  const BUCKET = 'world-assets';
+  const WRITE_ROLES = ['staff', 'moderator', 'admin'];
+
+  const canUseStorage = () =>
+    !!(window.supabaseClient && window.supabaseClient.storage)
+    && WRITE_ROLES.includes(window.CURRENT_ROLE);
+
+  function dataUrlToBlob(dataUrl) {
+    const [head, b64] = dataUrl.split(',');
+    const mime = (head.match(/data:([^;]+)/) || [])[1] || 'image/webp';
+    const bin = atob(b64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    return new Blob([buf], { type: mime });
+  }
+
+  const extFor = (mime) => ({
+    'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png',
+    'image/gif': 'gif', 'image/svg+xml': 'svg',
+  }[mime] || 'webp');
+
+  /* Push a processed image into the bucket. Returns a record with a real URL
+     on success, or the untouched (data-URL) record if anything is unavailable
+     — never throws, because failing to upload should not lose the image. */
+  async function storeImage(img, folder) {
+    if (!img || !img.dataUrl || img.remote) return img;
+    if (!canUseStorage()) return img;
+    try {
+      const blob = dataUrlToBlob(img.dataUrl);
+      const path = (folder || 'misc') + '/'
+        + Date.now().toString(36) + '-'
+        + Math.random().toString(36).slice(2, 8) + '.' + extFor(blob.type);
+
+      const { error } = await window.supabaseClient.storage
+        .from(BUCKET).upload(path, blob, { contentType: blob.type, upsert: false });
+      if (error) throw error;
+
+      const { data } = window.supabaseClient.storage.from(BUCKET).getPublicUrl(path);
+      if (!data || !data.publicUrl) throw new Error('no public URL');
+
+      const { dataUrl, ...rest } = img;          // drop the base64 payload
+      return { ...rest, url: data.publicUrl, storagePath: path, stored: true };
+    } catch (e) {
+      console.warn('[world-os] storage upload failed, keeping image inline:', e && e.message);
+      return img;
+    }
+  }
+
+  // Remove a stored file. Safe to call on any record; does nothing for
+  // inline or externally linked images.
+  async function removeStoredImage(img) {
+    if (!img || !img.storagePath || !canUseStorage()) return;
+    try {
+      await window.supabaseClient.storage.from(BUCKET).remove([img.storagePath]);
+    } catch (e) {
+      console.warn('[world-os] could not remove stored image:', e && e.message);
+    }
+  }
 
   // Open a file picker and return processed images.
   function pickImages({ preset = 'art', multiple = false } = {}) {
@@ -228,6 +300,7 @@
 
   Object.assign(WorldOS, {
     processImage, processUrl, probeImage, imageSrc, pickImages, prettyBytes, IMAGE_PRESETS,
+    storeImage, removeStoredImage, canUseStorage, BUCKET,
 
     /* ── cross-entity linking ──────────────────────────────────────────
        World Anvil's real power is that everything references everything.

@@ -110,7 +110,7 @@
         </U.Field>
         <U.Field label="Map image">
           <U.ImageDrop value={image} onChange={setImage} preset="map" height={220}
-            label="Drop your map image"/>
+            folder="maps" label="Drop your map image"/>
         </U.Field>
         <div className="wos-modal-actions">
           <button className="btn btn-gold" disabled={!name.trim() || !image} onClick={create}>Create map</button>

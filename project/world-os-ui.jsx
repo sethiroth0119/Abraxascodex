@@ -12,7 +12,7 @@
   /* ── ImageDrop ───────────────────────────────────────────────────────
      Drag a file on, or click to browse. Runs the file through the World OS
      image pipeline (downscale + WebP) and hands back the processed record.  */
-  function ImageDrop({ value, onChange, preset = 'art', label = 'Drop an image', height = 180, clearable = true }) {
+  function ImageDrop({ value, onChange, preset = 'art', label = 'Drop an image', height = 180, clearable = true, folder = 'misc' }) {
     const [over, setOver] = useState(false);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState('');
@@ -23,7 +23,7 @@
       setBusy(true); setErr('');
       try {
         const img = await window.WorldOS.processUrl(url, preset);
-        onChange(img); setUrl('');
+        onChange(await window.WorldOS.storeImage(img, folder)); setUrl('');
       } catch (e) {
         setErr(e.message || 'Could not load that URL');
       } finally { setBusy(false); }
@@ -34,7 +34,7 @@
       setBusy(true); setErr('');
       try {
         const img = await window.WorldOS.processImage(file, preset);
-        onChange(img);
+        onChange(await window.WorldOS.storeImage(img, folder));
       } catch (e) {
         setErr(e.message || 'Could not read that image');
       } finally { setBusy(false); }
@@ -48,7 +48,7 @@
 
     const browse = async () => {
       const [img] = await window.WorldOS.pickImages({ preset });
-      if (img) onChange(img);
+      if (img) onChange(await window.WorldOS.storeImage(img, folder));
     };
 
     return (
@@ -86,7 +86,8 @@
           <div className="wos-drop-meta">
             <span>{value.width}×{value.height}</span>
             <span>{value.remote ? 'linked' : window.WorldOS.prettyBytes(value.bytes)}</span>
-            {value.remote && <span className="wos-remote-tag">no storage used</span>}
+            {value.remote && <span className="wos-remote-tag">linked · no storage used</span>}
+            {value.stored && <span className="wos-remote-tag">stored in the cloud</span>}
             {!value.remote && value.naturalWidth > value.width && (
               <span className="wos-dim">resized from {value.naturalWidth}×{value.naturalHeight}</span>
             )}
