@@ -17,6 +17,9 @@ const ALL_PAGES = [
   'threads','tasks','ideas','concepts','dialogue','bugs',
   'campaigns','campaignCreator','worldEvents','resources','economy','relics',
   'playtest','activity','settings','users','sprites','live','players',
+  // World OS. These must be listed here or the role gate filters them out of
+  // the sidebar and blocks the route, even for admin.
+  'worldBible','atlas','assets','chronicle','relationships','publicWiki','quests',
 ];
 
 async function requireAuth() {
