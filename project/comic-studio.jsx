@@ -33,16 +33,36 @@
   ];
 
   const BALLOON_KINDS = [
-    { id: 'speech',  name: 'Speech' },
-    { id: 'thought', name: 'Thought' },
-    { id: 'shout',   name: 'Shout' },
-    { id: 'whisper', name: 'Whisper' },
-    { id: 'caption', name: 'Caption' },
-    { id: 'sfx',     name: 'Sound effect' },
+    { id: 'speech',    name: 'Speech',    tail: true },
+    { id: 'thought',   name: 'Thought',   tail: true },
+    { id: 'shout',     name: 'Shout',     tail: true },
+    { id: 'whisper',   name: 'Whisper',   tail: true },
+    { id: 'radio',     name: 'Radio / comms', tail: true },
+    { id: 'caption',   name: 'Caption box',   tail: false },
+    { id: 'sfx',       name: 'Sound effect',  tail: false },
   ];
-  const TAILS = [
-    { id: 'none', name: 'No tail' }, { id: 'bl', name: 'Bottom left' }, { id: 'bc', name: 'Bottom' },
-    { id: 'br', name: 'Bottom right' }, { id: 'tl', name: 'Top left' }, { id: 'tr', name: 'Top right' },
+  const kindDef = (id) => BALLOON_KINDS.find(k => k.id === id) || BALLOON_KINDS[0];
+
+  /* Caption looks. A narration box is not one thing — a yellow corner box and
+     a full-width black bar do different jobs on the page. */
+  const CAPTION_STYLES = [
+    { id: 'classic', name: 'Classic yellow', fill: '#f6e27a', text: '#14110c', border: '#14110c' },
+    { id: 'white',   name: 'White box',      fill: '#fdfbf5', text: '#14110c', border: '#14110c' },
+    { id: 'bar',     name: 'Black bar',      fill: '#0d0d0f', text: '#f6f2e8', border: '#0d0d0f' },
+    { id: 'parch',   name: 'Parchment',      fill: '#e8dcc0', text: '#2a2013', border: '#6b5a38' },
+    { id: 'blue',    name: 'Cold blue',      fill: '#cfe0ea', text: '#0f1c26', border: '#12303f' },
+  ];
+  const capStyle = (id) => CAPTION_STYLES.find(c => c.id === id) || CAPTION_STYLES[0];
+
+  /* Ready-made narration openers, so a caption is one click rather than a
+     blank box you have to think of something for. */
+  const CAPTION_PRESETS = [
+    { group: 'Time', items: ['Early that day…', 'Later…', 'Moments later…', 'That night…',
+        'The next morning…', 'Three days later…', 'Years ago…', 'At dawn…', 'By nightfall…', 'Long before any of this…'] },
+    { group: 'Place', items: ['Elsewhere…', 'Meanwhile…', 'Back at the gate…', 'Far to the north…',
+        'Somewhere beneath the city…', 'On the other side…'] },
+    { group: 'Beat', items: ['And then —', 'Nothing happened.', 'For a moment, no one moved.',
+        'It did not stop.', 'Everything changed.', 'No one spoke.'] },
   ];
 
   /* ── image cache: canvas needs decoded bitmaps, not <img> elements ──── */
@@ -97,17 +117,25 @@
     ctx.closePath();
   }
 
+  /* A thought balloon is a ring of overlapping lobes, not a polygon — drawing
+     it with straight segments reads as a crystal, which is not the idea. */
   function cloudPath(ctx, x, y, w, h) {
+    const cx = x + w / 2, cy = y + h / 2;
+    const rx = w / 2, ry = h / 2;
+    const lobes = Math.max(9, Math.round(w / 34));
     ctx.beginPath();
-    const steps = 14, cx = x + w / 2, cy = y + h / 2, rx = w / 2, ry = h / 2;
-    for (let i = 0; i < steps; i++) {
-      const a = (i / steps) * Math.PI * 2;
-      const bump = i % 2 === 0 ? 1 : 0.86;
-      const px = cx + Math.cos(a) * rx * bump;
-      const py = cy + Math.sin(a) * ry * bump;
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    for (let i = 0; i < lobes; i++) {
+      const a = (i / lobes) * Math.PI * 2;
+      // ride an ellipse slightly inside the box so lobes stay in bounds
+      const lx = cx + Math.cos(a) * (rx * 0.80);
+      const ly = cy + Math.sin(a) * (ry * 0.74);
+      const r = Math.min(rx, ry) * 0.42 + (i % 2 ? 2 : 6);
+      ctx.moveTo(lx + r, ly);
+      ctx.arc(lx, ly, r, 0, Math.PI * 2);
     }
-    ctx.closePath();
+    // a solid core so the lobes read as one mass rather than a chain
+    ctx.moveTo(cx + rx * 0.86, cy);
+    ctx.ellipse(cx, cy, rx * 0.86, ry * 0.74, 0, 0, Math.PI * 2);
   }
 
   function spikyPath(ctx, x, y, w, h) {
@@ -121,6 +149,37 @@
       if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
     }
     ctx.closePath();
+  }
+
+  /* Legacy balloons stored a compass direction ('bl','bc'…) relative to the
+     bubble. New ones store the tip against the PANEL instead, which is the
+     behaviour you actually want: a speaker does not move when you reposition
+     their balloon, so the tail should stay pointing at them.
+     Returns absolute page coordinates, or null for no tail. */
+  const LEGACY_TAIL = { bl:[0.15,1.55], bc:[0.5,1.7], br:[0.85,1.55], tl:[0.15,-0.7], tr:[0.85,-0.7] };
+  function tailTipAbs(b, x, y, w, h, geo) {
+    if (b.tailPt === null) return null;
+    if (b.tailPt && typeof b.tailPt.x === 'number' && geo) {
+      return { x: geo.px + b.tailPt.x * geo.pw, y: geo.py + b.tailPt.y * geo.ph };
+    }
+    if (typeof b.tail === 'string') {
+      if (b.tail === 'none') return null;
+      const t = LEGACY_TAIL[b.tail] || LEGACY_TAIL.bc;
+      return { x: x + t[0] * w, y: y + t[1] * h };
+    }
+    if (b.tail === null) return null;
+    return { x: x + 0.5 * w, y: y + 1.7 * h };     // default: just below
+  }
+
+  /* Where a ray from the balloon centre toward the tip leaves the box. Gives
+     the tail a believable root on any shape without per-shape maths. */
+  function edgePoint(cx, cy, hw, hh, tx, ty) {
+    const dx = tx - cx, dy = ty - cy;
+    if (!dx && !dy) return { x: cx, y: cy + hh };
+    const sx = dx === 0 ? Infinity : hw / Math.abs(dx);
+    const sy = dy === 0 ? Infinity : hh / Math.abs(dy);
+    const t = Math.min(sx, sy);
+    return { x: cx + dx * t, y: cy + dy * t };
   }
 
   /* ── the single render path, used for preview and for export ────────── */
@@ -209,7 +268,7 @@
         const bx = px + (b.x || 0.1) * pw;
         const by = py + (b.y || 0.1) * ph;
         const bw = (b.w || 0.4) * pw;
-        drawBalloon(ctx, b, bx, by, bw, selection);
+        drawBalloon(ctx, b, bx, by, bw, { pw, ph, px, py }, selection);
       }
     }
 
@@ -217,9 +276,11 @@
     return { tainted };
   }
 
-  function drawBalloon(ctx, b, x, y, w, selection) {
+  function drawBalloon(ctx, b, x, y, w, geo, selection) {
     const kind = b.kind || 'speech';
+    const def = kindDef(kind);
     const isSfx = kind === 'sfx';
+    const isCap = kind === 'caption';
     const fontSize = b.size || (isSfx ? 72 : kind === 'shout' ? 34 : 28);
 
     ctx.font = isSfx
@@ -230,6 +291,7 @@
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(((b.rotate || -8) * Math.PI) / 180);
+      if (b.flipX) ctx.scale(-1, 1);
       ctx.lineJoin = 'round';
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 10;
@@ -245,67 +307,106 @@
     const lh = fontSize * 1.28;
     const h = lines.length * lh + pad * 2 - (lh - fontSize) / 2;
 
+    const cs = isCap ? capStyle(b.capStyle) : null;
+    const cx = x + w / 2, cy = y + h / 2;
+
+    // tail tip in absolute page coords
+    const tp = def.tail ? tailTipAbs(b, x, y, w, h, geo) : null;
+    const tipX = tp ? tp.x : 0;
+    const tipY = tp ? tp.y : 0;
+
     ctx.save();
-    ctx.fillStyle = kind === 'caption' ? 'rgba(252,248,238,.97)' : '#ffffff';
-    ctx.strokeStyle = '#000';
+
+    // mirror the shape when asked, so an asymmetric bubble can sit either side
+    if (b.flipX || b.flipY) {
+      ctx.translate(cx, cy);
+      ctx.scale(b.flipX ? -1 : 1, b.flipY ? -1 : 1);
+      ctx.translate(-cx, -cy);
+    }
+
+    ctx.fillStyle = isCap ? cs.fill : '#ffffff';
+    ctx.strokeStyle = isCap ? cs.border : '#000';
     ctx.lineWidth = kind === 'whisper' ? 2 : 4;
     if (kind === 'whisper') ctx.setLineDash([9, 7]);
+    if (kind === 'radio') ctx.setLineDash([2, 0]);
 
     if (kind === 'thought') cloudPath(ctx, x, y, w, h);
     else if (kind === 'shout') spikyPath(ctx, x, y, w, h);
-    else if (kind === 'caption') { ctx.beginPath(); ctx.rect(x, y, w, h); }
+    else if (kind === 'radio') { ctx.beginPath(); ctx.rect(x, y, w, h); }
+    else if (isCap) { ctx.beginPath(); ctx.rect(x, y, w, h); }
     else roundRect(ctx, x, y, w, h, 22);
     ctx.fill();
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.restore();
 
-    // tail
-    const tail = b.tail || 'bc';
-    if (tail !== 'none' && kind !== 'caption') {
-      const cx = x + w / 2, len = 46;
-      let ax, ay, tx, ty;
-      if (tail[0] === 'b') { ay = y + h - 2; ty = ay + len; }
-      else { ay = y + 2; ty = ay - len; }
-      if (tail[1] === 'l') { ax = x + w * 0.25; tx = ax - 26; }
-      else if (tail[1] === 'r') { ax = x + w * 0.75; tx = ax + 26; }
-      else { ax = cx; tx = cx + 12; }
+    /* ── tail: drawn toward wherever the tip has been dragged ──────────── */
+    if (tp) {
+      const root = edgePoint(cx, cy, w / 2, h / 2, tipX, tipY);
+      const ang = Math.atan2(tipY - cy, tipX - cx);
+      const px2 = Math.cos(ang + Math.PI / 2), py2 = Math.sin(ang + Math.PI / 2);
+      const baseHalf = Math.max(12, Math.min(30, w * 0.09));
 
+      ctx.save();
       if (kind === 'thought') {
-        // trailing bubbles rather than a spike
-        [0.45, 0.75, 1].forEach((t, i) => {
-          const r = 13 - i * 3.5;
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+        [0.42, 0.72, 0.95].forEach((t, i) => {
+          const r = 14 - i * 4;
           ctx.beginPath();
-          ctx.arc(ax + (tx - ax) * t, ay + (ty - ay) * t, r, 0, Math.PI * 2);
+          ctx.arc(root.x + (tipX - root.x) * t, root.y + (tipY - root.y) * t, r, 0, Math.PI * 2);
           ctx.fill(); ctx.stroke();
         });
+      } else if (kind === 'radio') {
+        // a jagged bolt rather than a smooth spike
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.beginPath();
+        ctx.moveTo(root.x, root.y);
+        const segs = 4;
+        for (let i = 1; i <= segs; i++) {
+          const t = i / segs;
+          const jx = (i % 2 ? 1 : -1) * 12 * (1 - t);
+          ctx.lineTo(root.x + (tipX - root.x) * t + px2 * jx,
+                     root.y + (tipY - root.y) * t + py2 * jx);
+        }
+        ctx.stroke();
       } else {
         ctx.beginPath();
-        ctx.moveTo(ax - 20, ay);
-        ctx.lineTo(ax + 20, ay);
-        ctx.lineTo(tx, ty);
+        ctx.moveTo(root.x + px2 * baseHalf, root.y + py2 * baseHalf);
+        ctx.lineTo(tipX, tipY);
+        ctx.lineTo(root.x - px2 * baseHalf, root.y - py2 * baseHalf);
         ctx.closePath();
         ctx.fillStyle = '#fff';
         ctx.fill();
-        // hide the seam where the tail meets the body
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = kind === 'whisper' ? 2 : 4;
+        if (kind === 'whisper') ctx.setLineDash([9, 7]);
+        // stroke only the two outer edges so the join with the body stays open
         ctx.beginPath();
-        ctx.moveTo(ax - 20, ay); ctx.lineTo(tx, ty); ctx.moveTo(ax + 20, ay); ctx.lineTo(tx, ty);
+        ctx.moveTo(root.x + px2 * baseHalf, root.y + py2 * baseHalf);
+        ctx.lineTo(tipX, tipY);
+        ctx.lineTo(root.x - px2 * baseHalf, root.y - py2 * baseHalf);
         ctx.stroke();
+        ctx.setLineDash([]);
       }
+      ctx.restore();
     }
 
     // text
-    ctx.fillStyle = '#14110c';
-    ctx.textAlign = 'center';
-    lines.forEach((ln, i) => ctx.fillText(ln, x + w / 2, y + pad + fontSize * 0.9 + i * lh));
-    ctx.textAlign = 'left';
-
-    // speaker label, editor only
-    if (b.speakerName) {
-      ctx.font = '600 15px Lato, sans-serif';
-      ctx.fillStyle = 'rgba(0,0,0,.45)';
-      ctx.fillText(b.speakerName, x + 4, y - 8);
-    }
+    ctx.save();
+    ctx.fillStyle = isCap ? cs.text : '#14110c';
+    ctx.textAlign = b.align || 'center';
+    const tx = b.align === 'left' ? x + pad : b.align === 'right' ? x + w - pad : x + w / 2;
+    lines.forEach((ln, i) => ctx.fillText(ln, tx, y + pad + fontSize * 0.9 + i * lh));
     ctx.restore();
+
+    // who is speaking — editor aid, not drawn on export
+    if (b.speakerName && selection) {
+      ctx.save();
+      ctx.font = '600 15px Lato, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      ctx.textAlign = 'left';
+      ctx.fillText(b.speakerName, x + 4, y - 8);
+      ctx.restore();
+    }
 
     if (selection && selection.type === 'balloon' && selection.id === b.id) {
       ctx.save();
@@ -313,8 +414,48 @@
       ctx.lineWidth = 3;
       ctx.setLineDash([9, 7]);
       ctx.strokeRect(x - 6, y - 6, w + 12, h + 12);
+      ctx.setLineDash([]);
+      // draggable tail handle
+      if (tp) {
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, 11, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffab00';
+        ctx.fill();
+        ctx.strokeStyle = '#0d0d0f';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
       ctx.restore();
     }
+  }
+
+  /* Where the tail handle sits, in page coords — shared with hit-testing so
+     the grab area is exactly what is drawn. */
+  function tailHandleAt(ctx, page, panel, b) {
+    const def = kindDef(b.kind || 'speech');
+    if (!def.tail) return null;
+    const pr = panelRect(page, panel);
+    const x = pr.x + (b.x || .1) * pr.w;
+    const y = pr.y + (b.y || .1) * pr.h;
+    const w = (b.w || .4) * pr.w;
+    const h = balloonHeight(ctx, b, w);
+    const tp = tailTipAbs(b, x, y, w, h, { px: pr.x, py: pr.y, pw: pr.w, ph: pr.h });
+    if (!tp) return null;
+    return { x: tp.x, y: tp.y, w, h, bx: x, by: y };
+  }
+
+  /* Height has to be measured the same way the renderer does it, or the
+     handle drifts from the drawn tail. */
+  function balloonHeight(ctx, b, w) {
+    const kind = b.kind || 'speech';
+    if (kind === 'sfx') return 90;
+    const fontSize = b.size || (kind === 'shout' ? 34 : 28);
+    ctx.save();
+    ctx.font = `${kind === 'shout' ? 700 : 400} ${fontSize}px "Comic Neue", Lato, sans-serif`;
+    const lines = wrapText(ctx, b.text, w - 40);
+    ctx.restore();
+    const lh = fontSize * 1.28;
+    return lines.length * lh + 40 - (lh - fontSize) / 2;
   }
 
   /* ── page geometry helpers shared by hit-testing ─────────────────────── */
@@ -481,13 +622,26 @@
 
     const hit = (pt) => {
       if (!page) return null;
-      // balloons first — they sit on top
+      const mctx = canvasRef.current.getContext('2d');
+      // the tail handle is small and sits on top of everything
+      if (sel && sel.type === 'balloon') {
+        const p = (page.panels || []).find(x => x.id === sel.panelId);
+        const b = p && (p.balloons || []).find(x => x.id === sel.id);
+        if (b) {
+          const hnd = tailHandleAt(mctx, page, p, b);
+          if (hnd && Math.hypot(pt.x - hnd.x, pt.y - hnd.y) < 22) {
+            return { type: 'tail', id: b.id, panelId: p.id };
+          }
+        }
+      }
+      // balloons next — they sit above the art
       for (const p of (page.panels || [])) {
         const pr = panelRect(page, p);
         for (const b of (p.balloons || [])) {
           const bx = pr.x + (b.x || .1) * pr.w, by = pr.y + (b.y || .1) * pr.h;
-          const bw = (b.w || .4) * pr.w, bh = (b.kind === 'sfx' ? 90 : 120);
-          if (pt.x >= bx - 10 && pt.x <= bx + bw + 10 && pt.y >= by - 20 && pt.y <= by + bh) {
+          const bw = (b.w || .4) * pr.w;
+          const bh = balloonHeight(mctx, b, bw);
+          if (pt.x >= bx - 10 && pt.x <= bx + bw + 10 && pt.y >= by - 20 && pt.y <= by + bh + 10) {
             return { type: 'balloon', id: b.id, panelId: p.id };
           }
         }
@@ -504,6 +658,10 @@
     const onDown = (e) => {
       const pt = toPage(e);
       const h = hit(pt);
+      if (h && h.type === 'tail') {
+        drag.current = { h };           // selection stays on the balloon
+        return;
+      }
       setSel(h);
       if (h && h.type === 'balloon') {
         const p = (page.panels || []).find(x => x.id === h.panelId);
@@ -519,8 +677,20 @@
       const p = (page.panels || []).find(x => x.id === h.panelId);
       if (!p) return;
       const pr = panelRect(page, p);
-      const nx = Math.max(0, Math.min(.92, (pt.x - offX - pr.x) / pr.w));
-      const ny = Math.max(0, Math.min(.92, (pt.y - offY - pr.y) / pr.h));
+
+      if (h.type === 'tail') {
+        const b = (p.balloons || []).find(x => x.id === h.id);
+        if (!b) return;
+        const mctx = canvasRef.current.getContext('2d');
+        // stored against the panel, so the tip stays on the speaker when the
+        // bubble is moved elsewhere
+        setPanel(p.id, { balloons: (p.balloons || []).map(x => x.id === h.id
+          ? { ...x, tailPt: { x: (pt.x - pr.x) / pr.w, y: (pt.y - pr.y) / pr.h } } : x) });
+        return;
+      }
+
+      const nx = Math.max(-.05, Math.min(.95, (pt.x - offX - pr.x) / pr.w));
+      const ny = Math.max(-.05, Math.min(.95, (pt.y - offY - pr.y) / pr.h));
       setPanel(p.id, { balloons: (p.balloons || []).map(b => b.id === h.id ? { ...b, x: nx, y: ny } : b) });
     };
     const onUp = () => { drag.current = null; };
@@ -716,8 +886,11 @@
     const addBalloon = (kind) => {
       const b = {
         id: window.makeId ? window.makeId() : 'bl_' + Date.now(),
-        kind, text: kind === 'sfx' ? 'KRAKOOM' : 'New line…',
-        x: .12, y: .12, w: kind === 'sfx' ? .5 : .42, tail: kind === 'caption' ? 'none' : 'bc',
+        kind,
+        text: kind === 'sfx' ? 'KRAKOOM' : kind === 'caption' ? 'Early that day…' : 'New line…',
+        x: .12, y: .12, w: kind === 'sfx' ? .5 : .42,
+        tailPt: kindDef(kind).tail ? { x: .30, y: .40 } : null,
+        capStyle: 'classic', align: 'center', flipX: false, flipY: false,
         speaker: null, speakerName: '',
       };
       setPanel(panel.id, { balloons: balloons.concat(b) });
@@ -765,6 +938,10 @@
         </U.Field>
 
         <div className="wos-side-head" style={{ marginTop: 12 }}>Lettering</div>
+        <div className="wos-dim" style={{ fontSize: 12, marginBottom: 8, lineHeight: 1.5 }}>
+          Drag a bubble to move it. Select one and drag the gold dot to point its
+          tail at whoever is speaking — anywhere in the panel, or off its edge.
+        </div>
         <div className="chip-row" style={{ marginBottom: 8 }}>
           {BALLOON_KINDS.map(k => (
             <span key={k.id} className="chip" onClick={() => addBalloon(k.id)}>+ {k.name}</span>
@@ -780,10 +957,25 @@
             </div>
             <textarea className="field-area" value={b.text} style={{ minHeight: 52 }}
               onChange={e => setB(b.id, { text: e.target.value })}/>
-            <div className="field-row">
-              <select className="field-select" value={b.tail || 'bc'} onChange={e => setB(b.id, { tail: e.target.value })}>
-                {TAILS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+            {b.kind === 'caption' && (
+              <>
+                <select className="field-select" value={b.capStyle || 'classic'}
+                  onChange={e => setB(b.id, { capStyle: e.target.value })}>
+                  {CAPTION_STYLES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <select className="field-select" value=""
+                  onChange={e => { if (e.target.value) setB(b.id, { text: e.target.value }); }}>
+                  <option value="">— insert a narration line —</option>
+                  {CAPTION_PRESETS.map(g => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.items.map(t => <option key={t} value={t}>{t}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </>
+            )}
+
+            {kindDef(b.kind).tail && (
               <select className="field-select" value={b.speaker ? b.speaker.profileId : ''}
                 onChange={e => {
                   const c = cast.find(x => x.profileId === e.target.value);
@@ -791,8 +983,33 @@
                     ? { speaker: { profileId: c.profileId }, speakerName: c.name }
                     : { speaker: null, speakerName: '' });
                 }}>
-                <option value="">— speaker —</option>
+                <option value="">— who is speaking —</option>
                 {cast.map(c => <option key={c.profileId} value={c.profileId}>{c.name}</option>)}
+              </select>
+            )}
+
+            <div className="cs-btnrow">
+              <button className="btn wos-mini" onClick={(e) => { e.stopPropagation(); setB(b.id, { flipX: !b.flipX }); }}
+                title="Mirror the bubble left/right">{b.flipX ? '◀▶ flipped' : '◀▶ flip H'}</button>
+              <button className="btn wos-mini" onClick={(e) => { e.stopPropagation(); setB(b.id, { flipY: !b.flipY }); }}
+                title="Mirror the bubble up/down">{b.flipY ? '▲▼ flipped' : '▲▼ flip V'}</button>
+              {kindDef(b.kind).tail && (
+                <>
+                  <button className="btn wos-mini" onClick={(e) => { e.stopPropagation();
+                    setB(b.id, { tailPt: { x: (b.x || .1) + (b.w || .4) / 2, y: (b.y || .1) + .18 } }); }}
+                    title="Put the tail just below the bubble">
+                    reset tail
+                  </button>
+                  <button className="btn wos-mini" onClick={(e) => { e.stopPropagation();
+                    setB(b.id, { tailPt: null, tail: null }); }} title="Remove the tail">no tail</button>
+                </>
+              )}
+              <select className="field-select wos-mini" value={b.align || 'center'} style={{ maxWidth: 92 }}
+                onClick={e => e.stopPropagation()}
+                onChange={e => setB(b.id, { align: e.target.value })}>
+                <option value="center">Centre</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
               </select>
             </div>
             <U.Field label={'Width ' + Math.round((b.w || .42) * 100) + '%'}>
@@ -919,6 +1136,8 @@
       .cs-balloon-row.on{border-color:var(--gold)}
       .cs-balloon-head{display:flex;align-items:center;justify-content:space-between;font-size:10px;
         letter-spacing:.18em;text-transform:uppercase}
+      .cs-btnrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+      .cs-btnrow .btn{padding:3px 8px;font-size:11px}
       .cs-cast{border:1px solid var(--rule);border-left:3px solid var(--gold-deep);border-radius:var(--r-sm);
         padding:8px;margin-top:8px;background:var(--parchment-3);display:flex;flex-direction:column;gap:6px}
       .cs-cast-top{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
