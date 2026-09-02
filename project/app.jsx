@@ -67,7 +67,15 @@ const ACCENTS = [
 ];
 
 const App = () => {
-  const [route, setRoute] = React.useState('dashboard');
+  // Land on a page this role can actually open. Without this, a role whose
+  // permissions exclude the dashboard hits the lock screen on sign-in.
+  const firstAllowedRoute = () => {
+    const allowed = window.ALLOWED_PAGES;
+    if (!allowed || allowed.has('dashboard')) return 'dashboard';
+    const nav = (window.NAV || []).flatMap(g => g.items).map(i => i.id);
+    return nav.find(id => allowed.has(id)) || 'dashboard';
+  };
+  const [route, setRoute] = React.useState(firstAllowedRoute);
   const [showProfile, setShowProfile] = React.useState(false);
   const [t, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
   const [settings] = window.useEntities ? window.useEntities('settings') : [(window.SETTINGS||{})];
@@ -99,7 +107,7 @@ const App = () => {
 
   // Open profile overlay when sidebar footer is clicked
   React.useEffect(() => {
-    if (route === 'profile') { setShowProfile(true); setRoute('dashboard'); }
+    if (route === 'profile') { setShowProfile(true); setRoute(firstAllowedRoute()); }
   }, [route]);
 
   // Let any page navigate — World OS context panels use this to jump from a

@@ -63,11 +63,13 @@ async function requireAuth() {
   document.body.dataset.viewer = window.IS_VIEWER ? 'true' : 'false';
 
   // Build the set of pages this role can see.
-  // Card Forge ('cards') is now STAFF/ADMIN ONLY — it edits the shared card
-  // catalog. The community browses + votes on those cards from Forge Hall
-  // (the dashboard) instead. Monster Manual and Campaign Creator stay open to
-  // all members (bestiary browsing + story authoring).
-  const ALWAYS_ALLOWED = ['monsters', 'campaignCreator', 'players'];
+  // Members ('user') get exactly three things: the Bug Tracker, the Campaign
+  // Creator, and the Monster Manual — and the Monster Manual is read-only for
+  // them, enforced inside the bestiary itself (bestiary/app.jsx gates editing
+  // on admin/staff). Everything else, World OS and Comic Studio included, is
+  // staff and admin only. 'players' (Gaming Profiles) was previously forced on
+  // for everyone; it is no longer, so members cannot reach it.
+  const ALWAYS_ALLOWED = ['monsters', 'campaignCreator'];
   const myPerms = allPerms.find(p => p.role === role);
   window.ALLOWED_PAGES = new Set(
     role === 'admin' ? ALL_PAGES :

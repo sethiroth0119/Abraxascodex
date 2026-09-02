@@ -485,8 +485,19 @@
     const live = useMemo(() => (comics || []).filter(c => c && !c._deleted), [comics]);
     const open = live.find(c => c.id === openId) || null;
 
+    // Deleting a comic has to take its pages with it, or they linger as
+    // orphans that nothing lists and nothing can reach.
+    const deleteComic = (c) => {
+      const n = (pages || []).filter(p => p.comicId === c.id && !p._deleted).length;
+      if (!window.confirm('Delete "' + c.title + '"' + (n ? ' and its ' + n + ' page' + (n === 1 ? '' : 's') : '') + '? This cannot be undone.')) return;
+      setComics((comics || []).map(x => x.id === c.id ? { ...x, _deleted: true } : x));
+      setPages((pages || []).map(p => p.comicId === c.id ? { ...p, _deleted: true } : p));
+      setOpenId(null);
+    };
+
     if (open) return <ComicEditor comic={open} comics={comics} setComics={setComics}
-      pages={pages} setPages={setPages} onBack={() => setOpenId(null)}/>;
+      pages={pages} setPages={setPages} onBack={() => setOpenId(null)}
+      onDeleteComic={() => deleteComic(open)}/>;
 
     return (
       <div className="page">
@@ -514,7 +525,11 @@
                   <div className="quest-status" style={{ color: 'var(--gold)' }}>{c.issue || 'Issue —'}</div>
                   <div className="quest-title">{c.title}</div>
                   {c.synopsis && <div className="quest-hook">{c.synopsis}</div>}
-                  <div className="quest-meta"><span>{n} page{n === 1 ? '' : 's'}</span></div>
+                  <div className="quest-meta">
+                    <span>{n} page{n === 1 ? '' : 's'}</span>
+                    <button className="btn btn-ghost wos-mini" style={{ marginLeft: 'auto' }}
+                      onClick={(e) => { e.stopPropagation(); deleteComic(c); }}>Delete</button>
+                  </div>
                 </div>
               );
             })}
@@ -573,7 +588,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════════════════ */
-  function ComicEditor({ comic, comics, setComics, pages, setPages, onBack }) {
+  function ComicEditor({ comic, comics, setComics, pages, setPages, onBack, onDeleteComic }) {
     const U = UI();
     const canvasRef = useRef(null);
     const wrapRef = useRef(null);
@@ -802,6 +817,7 @@
             <button className="btn btn-gold" disabled={exporting} onClick={() => download(2)}>
               {exporting ? 'Rendering…' : 'Download page'}
             </button>
+            <button className="btn btn-ghost" onClick={onDeleteComic}>Delete comic</button>
           </div>
         </div>
 
