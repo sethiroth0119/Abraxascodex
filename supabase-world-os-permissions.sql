@@ -21,7 +21,9 @@ set allowed_pages = rp.allowed_pages || (
     'chronicle',      -- eras and history
     'relationships',  -- who stands where, and against whom
     'publicWiki',     -- reader preview with the audience switcher
-    'quests'          -- hooks, objectives, outcomes
+    'quests',         -- hooks, objectives, outcomes
+    'powerCodex',     -- scaling, forms, weapons
+    'comics'          -- comic page composer
   ]) with ordinality as t(p, ord)
   where not (p = any(rp.allowed_pages))
 )

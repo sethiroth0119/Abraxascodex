@@ -20,6 +20,7 @@ const ALL_PAGES = [
   // World OS. These must be listed here or the role gate filters them out of
   // the sidebar and blocks the route, even for admin.
   'worldBible','atlas','assets','chronicle','relationships','publicWiki','quests',
+  'powerCodex','comics',
 ];
 
 async function requireAuth() {
