@@ -63,12 +63,15 @@ async function requireAuth() {
   document.body.dataset.viewer = window.IS_VIEWER ? 'true' : 'false';
 
   // Build the set of pages this role can see.
-  // Members ('user') get exactly three things: the Bug Tracker, the Campaign
-  // Creator, and the Monster Manual — and the Monster Manual is read-only for
-  // them, enforced inside the bestiary itself (bestiary/app.jsx gates editing
-  // on admin/staff). Everything else, World OS and Comic Studio included, is
-  // staff and admin only. 'players' (Gaming Profiles) was previously forced on
-  // for everyone; it is no longer, so members cannot reach it.
+  // Members ('user') get four things: the Bug Tracker, the Campaign Creator,
+  // the Monster Manual, and Gaming Profiles (how a player links their Mythic
+  // Spellbook game account). The Monster Manual is read-only for them,
+  // enforced inside the bestiary itself — bestiary/app.jsx gates editing on
+  // admin/staff. Everything else, World OS and Comic Studio included, is staff
+  // and admin only.
+  //
+  // 'players' is granted per role in role_permissions rather than forced on
+  // here, so the table stays the single statement of who sees what.
   const ALWAYS_ALLOWED = ['monsters', 'campaignCreator'];
   const myPerms = allPerms.find(p => p.role === role);
   window.ALLOWED_PAGES = new Set(

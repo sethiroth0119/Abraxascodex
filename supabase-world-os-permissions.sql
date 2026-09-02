@@ -56,3 +56,12 @@ set allowed_pages = array[
   'powerCodex','comics'
 ]
 where role = 'staff';
+
+-- Gaming Profiles restored. It is how a player links their Mythic Spellbook
+-- game account, so members need it; moderators lost it when it stopped being
+-- forced on in ALWAYS_ALLOWED, and get it back here too rather than being left
+-- worse off than a member.
+update public.role_permissions
+set allowed_pages = allowed_pages || array['players']
+where role in ('user','moderator')
+  and not ('players' = any(allowed_pages));
