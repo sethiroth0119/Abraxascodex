@@ -1114,3 +1114,8 @@ body[data-viewer="true"] .viewer-banner { display:flex!important; }
 
 /* ── Sprite Forge ───────────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Bug tracker — a failed save must be impossible to miss. */
+.bug-save-error{border:1px solid var(--pyrth);background:rgba(180,69,57,.14);color:var(--ink);
+  padding:12px 16px;border-radius:var(--r-md);margin-bottom:16px;font-size:13px;line-height:1.6}
+.bug-save-error b{color:var(--pyrth)}

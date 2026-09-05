@@ -46,7 +46,13 @@ function rtBug(ts) {
 }
 
 const BugsPage = () => {
-  const [bugs, setBugs] = window.useEntities ? window.useEntities('bugs') : React.useState(window.BUGS);
+  // Reports are per-row in public.bug_reports so a member can file one without
+  // needing write access to the whole shared collection. Falls back to the old
+  // collection only if the new store is unavailable.
+  const [bugs, setBugs, bugStatus] = window.useBugReports
+    ? window.useBugReports()
+    : (window.useEntities ? [...window.useEntities('bugs'), { loading:false, error:null, saving:false }]
+                          : [...React.useState(window.BUGS), { loading:false, error:null, saving:false }]);
   const [openId, setOpenId] = React.useState(null);
   const [reportModal, setReportModal] = React.useState(false);
   const [filterStatus, setFilterStatus] = React.useState('all');
@@ -184,10 +190,17 @@ const BugsPage = () => {
 
   return (
     <div className="page">
+      {bugStatus.error && (
+        <div className="bug-save-error">
+          <b>Not saved.</b> {bugStatus.error}
+          {' '}Your text is still on screen — copy it before leaving this page.
+        </div>
+      )}
       <div className="page-head">
         <div>
           <h1 className="page-title"><span className="ornament">🐞</span>Bug Tracker</h1>
           <div className="page-sub">
+            {bugStatus.saving ? <span style={{color:'var(--gold)'}}>saving… </span> : null}
             {bugs.length} report{bugs.length!==1?'s':''} ·
             {' '}<span style={{color:'var(--gold-bright)'}}>{stats.open} open</span> ·
             {' '}<span style={{color:'var(--ember)'}}>{stats.critical} critical</span> ·
