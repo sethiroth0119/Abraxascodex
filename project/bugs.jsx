@@ -63,8 +63,8 @@ const BugsPage = () => {
     title:'', description:'', category:'gameplay', severity:'med',
     reporter:'', email:'', reproSteps:'', expected:'', actual:'', build:'v0.1', platform:'',
   });
-  // Each modal session gets a fresh slot id so uploads attach to the right bug after submit
-  const [draftSlotId, setDraftSlotId] = React.useState(() => 'bug-draft-' + Date.now().toString(36));
+  // Files are uploaded as they are picked and carried on the draft until submit.
+  const [draftAtts, setDraftAtts] = React.useState([]);
   const [response, setResponse] = React.useState('');
   const settings = (window.SETTINGS||{});
   const me = settings.designerName || 'Team';
@@ -112,7 +112,7 @@ const BugsPage = () => {
       updated: Date.now(),
       responses: [],
       votes: [],
-      attachmentSlot: draftSlotId, // link to image-slot uploaded during the modal
+      attachments: draftAtts,       // many images/videos, stored in bug-attachments
       // Mythic Spellbook account (if connected) so the reporter can be paid a bounty.
       msbUserId: msbId && msbId.userId,
       msbEmail:  msbId && msbId.email,
@@ -123,7 +123,7 @@ const BugsPage = () => {
       title:'', description:'', category:'gameplay', severity:'med',
       reporter:'', email:'', reproSteps:'', expected:'', actual:'', build:'v0.1', platform:'',
     });
-    setDraftSlotId('bug-draft-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,6));
+    setDraftAtts([]);
     setOpenId(id);
   };
 
@@ -409,11 +409,15 @@ const BugsPage = () => {
 
                   {/* Attached art */}
                   <div className="field" style={{margin:0,marginBottom:14}}>
-                    <label className="field-label">Screenshot / attachment</label>
-                    <div style={{width:'100%',height:160,borderRadius:6,overflow:'hidden',border:'1px dashed var(--rule-strong)',background:'var(--parchment-3)'}}>
-                      <image-slot id={open.attachmentSlot || `bug-${open.id}`} shape="rect" placeholder="Drop a screenshot or reference image"
-                        style={{width:'100%',height:'100%',display:'block',border:'none',background:'transparent'}}></image-slot>
-                    </div>
+                    <label className="field-label">
+                      Attachments{(open.attachments||[]).length ? ' · ' + open.attachments.length : ''}
+                    </label>
+                    {window.BugAttachments
+                      ? <window.BugAttachments
+                          value={open.attachments || []}
+                          onChange={v => update(open.id, { attachments: v })}
+                          readOnly={!!window.IS_VIEWER}/>
+                      : <div className="wos-dim">Attachments unavailable.</div>}
                   </div>
 
                   {/* Responses thread */}
@@ -546,14 +550,12 @@ const BugsPage = () => {
 
               {/* Screenshot / attachment upload */}
               <div className="field" style={{margin:0,marginTop:14}}>
-                <label className="field-label">📎 Screenshot or attachment (optional)</label>
-                <div style={{width:'100%',height:200,borderRadius:6,overflow:'hidden',border:'1px dashed var(--rule-strong)',background:'var(--parchment-3)',position:'relative'}}>
-                  <image-slot id={draftSlotId} shape="rect" placeholder="Drop a screenshot, photo, or reference image (or click to browse)"
-                    style={{width:'100%',height:'100%',display:'block',border:'none',background:'transparent'}}></image-slot>
-                </div>
-                <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)',marginTop:4,letterSpacing:'.06em'}}>
-                  Drag &amp; drop an image, or click the area to pick one. Stays attached to this report after submission.
-                </div>
+                <label className="field-label">
+                  📎 Screenshots &amp; video (optional){draftAtts.length ? ' · ' + draftAtts.length + ' attached' : ''}
+                </label>
+                {window.BugAttachments
+                  ? <window.BugAttachments value={draftAtts} onChange={setDraftAtts}/>
+                  : <div className="wos-dim">Attachments unavailable.</div>}
               </div>
 
               <div style={{display:'flex',gap:8,marginTop:20,paddingTop:14,borderTop:'1px solid var(--rule)'}}>
