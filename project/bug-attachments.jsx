@@ -100,41 +100,81 @@
   }
 
   /* A private bucket means no permanent URL. Sign on demand and cache for the
-     life of the view; the record keeps only the path. */
+     life of the view; the record keeps only the path.
+
+     Returns { url, error } rather than a bare string: a blank thumbnail with
+     no stated reason is exactly the kind of silent failure this whole feature
+     has already been bitten by twice. */
   const signCache = new Map();
   async function signedUrl(path) {
-    if (!path) return '';
+    if (!path) return { url: '', error: 'no path on this attachment' };
     const hit = signCache.get(path);
-    if (hit && hit.expires > Date.now()) return hit.url;
-    if (!sb()) return '';
-    const { data, error } = await sb().storage.from(BUCKET).createSignedUrl(path, 3600);
-    if (error || !data) return '';
-    signCache.set(path, { url: data.signedUrl, expires: Date.now() + 55 * 60 * 1000 });
-    return data.signedUrl;
+    if (hit && hit.expires > Date.now()) return { url: hit.url, error: null };
+    if (!sb()) return { url: '', error: 'not connected' };
+    try {
+      const res = await sb().storage.from(BUCKET).createSignedUrl(path, 3600);
+      if (res.error) return await downloadFallback(path, res.error.message || String(res.error));
+      // supabase-js v2 returns signedUrl; v1 returned signedURL. Accepting both
+      // costs nothing and avoids a blank image if the CDN build ever changes.
+      const d = res.data || {};
+      const url = d.signedUrl || d.signedURL || '';
+      if (!url) return await downloadFallback(path, 'signing returned no URL');
+      signCache.set(path, { url, expires: Date.now() + 55 * 60 * 1000 });
+      return { url, error: null };
+    } catch (e) {
+      return await downloadFallback(path, e.message || String(e));
+    }
+  }
+
+  /* If signing fails, pull the bytes down instead. It needs the same read
+     permission but a different endpoint, so a quirk in one path does not leave
+     the viewer staring at an empty box. Object URLs are revoked when the page
+     goes away, which is fine for a thumbnail. */
+  async function downloadFallback(path, why) {
+    try {
+      const { data, error } = await sb().storage.from(BUCKET).download(path);
+      if (error || !data) return { url: '', error: (error && error.message) || why };
+      const url = URL.createObjectURL(data);
+      signCache.set(path, { url, expires: Date.now() + 55 * 60 * 1000, blob: true });
+      return { url, error: null };
+    } catch (e) {
+      return { url: '', error: why + ' (and download failed: ' + (e.message || e) + ')' };
+    }
   }
 
   /* ── one thumbnail that resolves its own signed URL ──────────────────── */
   function Attachment({ att, onRemove, canRemove }) {
     const [url, setUrl] = useState('');
-    const [failed, setFailed] = useState(false);
+    const [why, setWhy] = useState(null);      // why it could not be shown
 
     useEffect(() => {
       let alive = true;
-      signedUrl(att.path).then(u => { if (alive) { setUrl(u); if (!u) setFailed(true); } });
+      setUrl(''); setWhy(null);
+      signedUrl(att.path).then(r => {
+        if (!alive) return;
+        if (r.url) setUrl(r.url); else setWhy(r.error || 'could not load');
+      });
       return () => { alive = false; };
     }, [att.path]);
 
+    // the <img> itself can still fail after a good URL — an expired signature,
+    // a deleted object — so report that too rather than showing a blank box
+    const onMediaError = () => { signCache.delete(att.path); setWhy('image failed to load'); };
+
     return (
       <div className="bug-att">
-        {failed ? (
-          <div className="bug-att-missing">unavailable</div>
+        {why ? (
+          <div className="bug-att-missing" title={att.path + ' — ' + why}>
+            <span>can’t show this</span>
+            <small>{why}</small>
+          </div>
         ) : !url ? (
           <div className="bug-att-missing">loading…</div>
         ) : isVideo(att.type) ? (
-          <video src={url} controls preload="metadata" playsInline/>
+          <video src={url} controls preload="metadata" playsInline onError={onMediaError}/>
         ) : (
           <a href={url} target="_blank" rel="noopener noreferrer">
-            <img src={url} alt={att.name || 'attachment'} loading="lazy"/>
+            <img src={url} alt={att.name || 'attachment'} loading="lazy" onError={onMediaError}/>
           </a>
         )}
         <div className="bug-att-foot">
@@ -240,7 +280,9 @@
     .bug-att{border:1px solid var(--rule);border-radius:var(--r-sm);overflow:hidden;
       background:var(--parchment-3);display:flex;flex-direction:column}
     .bug-att img,.bug-att video{width:100%;height:110px;object-fit:cover;display:block;background:#000}
-    .bug-att-missing{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:12px}
+    .bug-att-missing{height:110px;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:3px;color:var(--ink-faint);font-size:12px;text-align:center;padding:6px}
+    .bug-att-missing small{font-size:10px;color:var(--pyrth);line-height:1.3;word-break:break-word}
     .bug-att-foot{display:flex;align-items:center;gap:6px;padding:5px 8px;font-size:11px;color:var(--ink-faint)}
     .bug-att-foot span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .bug-att-x{margin-left:auto;background:none;border:none;color:var(--ink-faint);cursor:pointer;
