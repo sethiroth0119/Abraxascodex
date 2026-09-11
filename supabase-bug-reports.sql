@@ -65,3 +65,12 @@ end $$;
 drop trigger if exists bug_reports_touch on public.bug_reports;
 create trigger bug_reports_touch before update on public.bug_reports
   for each row execute function public.bug_reports_touch();
+
+-- ── Grants ──────────────────────────────────────────────────────────────────
+-- Supabase's default privileges grant ALL on a new public table to anon and
+-- authenticated. Row-level security gates select/insert/update/delete but NOT
+-- truncate, so "RLS is enabled" says nothing about whether a role can empty the
+-- table. Every policy here is 'to authenticated', so anon needs nothing, and
+-- authenticated needs only the four verbs RLS actually governs.
+revoke all on public.bug_reports from anon;
+revoke truncate, trigger, references on public.bug_reports from authenticated;

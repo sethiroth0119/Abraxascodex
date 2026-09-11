@@ -21,6 +21,7 @@ const ALL_PAGES = [
   // the sidebar and blocks the route, even for admin.
   'worldBible','atlas','assets','chronicle','relationships','publicWiki','quests',
   'powerCodex','comics',
+  'features',
 ];
 
 async function requireAuth() {

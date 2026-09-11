@@ -65,3 +65,10 @@ update public.role_permissions
 set allowed_pages = allowed_pages || array['players']
 where role in ('user','moderator')
   and not ('players' = any(allowed_pages));
+
+-- Feature Requests. Members need it — they are the ones asking — so it goes
+-- to every role that has a row, not just staff.
+update public.role_permissions
+set allowed_pages = allowed_pages || array['features']
+where role in ('user','moderator','staff')
+  and not ('features' = any(allowed_pages));
