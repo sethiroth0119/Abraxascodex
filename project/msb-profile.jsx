@@ -91,6 +91,10 @@ async function fetchPublicProfile(client, userId) {
 // key. Falls back to the direct RPC only during setup (before the worker secret
 // + revoke are in place), so the transition never breaks the page.
 async function fetchProfileByEmail(client, email) {
+  // Why the server said no, if it did. Without this the fallback's "permission
+  // denied for function" is what surfaces, and that reads as "the migration was
+  // never run" when the real cause is a missing worker secret.
+  let serverErr = null;
   try {
     const { data: sess } = await window.supabaseClient.auth.getSession();
     const token = sess && sess.session && sess.session.access_token;
@@ -103,12 +107,19 @@ async function fetchProfileByEmail(client, email) {
         const p = typeof row === 'string' ? JSON.parse(row) : row;
         return parseProfile(p, p.mt);
       }
-      // Non-OK (e.g. 503 before the secret is set) → fall through to direct RPC.
+      // Non-OK (e.g. 503 before the secret is set) → fall through to direct RPC,
+      // but keep the reason so it can be reported if the fallback also fails.
+      try { const j = await r.json(); serverErr = j && j.error; } catch (e) {}
     }
   } catch (e) { /* fall through to direct RPC */ }
   if (!email) return null;
   const { data, error } = await client.rpc('msb_profile_by_email', { p_email: email });
-  if (error) throw error;
+  if (error) {
+    // The direct RPC is execute-revoked once the server route is live, so this
+    // failing on its own is expected; what matters is why the server refused.
+    if (serverErr) throw new Error('Game account lookup is not set up: ' + serverErr);
+    throw error;
+  }
   if (!data) return null;
   const row = typeof data === 'string' ? JSON.parse(data) : data;
   return parseProfile(row, row.mt);
