@@ -266,6 +266,10 @@
             <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password"/>
           </div>
           <button class="btn-primary" id="si-btn" onclick="signIn()">Enter the Codex</button>
+          <div style="text-align:center;margin-top:10px">
+            <a href="#" onclick="forgotPassword();return false;"
+               style="font-size:12px;color:var(--ink-faint);text-decoration:underline">Forgot your password?</a>
+          </div>
         </div>
 
         <!-- Sign Up -->
@@ -283,6 +287,19 @@
             <input type="password" id="su-password" placeholder="Min. 6 characters" autocomplete="new-password"/>
           </div>
           <button class="btn-primary" id="su-btn" onclick="signUp()">Create Account</button>
+        </div>
+
+        <!-- Set a new password — shown when arriving from a reset email -->
+        <div id="panel-reset" style="display:none">
+          <div class="field">
+            <label>New password</label>
+            <input type="password" id="rp-password" placeholder="••••••••" autocomplete="new-password"/>
+          </div>
+          <div class="field">
+            <label>Confirm new password</label>
+            <input type="password" id="rp-confirm" placeholder="••••••••" autocomplete="new-password"/>
+          </div>
+          <button class="btn-primary" id="rp-btn" onclick="setNewPassword()">Set password and enter</button>
         </div>
 
         <!-- Connect a Mythic Spellbook game account -->
@@ -319,8 +336,13 @@
     if (_inviteParam) sessionStorage.setItem('pendingInvite', _inviteParam);
 
     // Redirect to studio if already signed in (invite will be picked up there)
+    // A reset link carries a recovery token and creates a session. Without this
+    // guard the check below would send the player straight into the studio and
+    // the new password would never get set.
+    const IS_RECOVERY = /type=recovery/.test(location.hash + location.search);
+
     supabaseClient.auth.getSession().then(({ data }) => {
-      if (data.session) window.location.href = '/Mythic%20Spellbook%20Studio.html';
+      if (data.session && !IS_RECOVERY) window.location.href = '/Mythic%20Spellbook%20Studio.html';
     });
 
     // ── Mythic Spellbook game account connect ──────────────────────────────
@@ -347,7 +369,16 @@
       try {
         const { error } = await mgClient().auth.signInWithPassword({ email, password: pass });
         if (error) { showMsg(error.message, 'error'); return; }
-        showMsg('✓ Mythic Spellbook connected — your game stats will appear on your Codex profile.', 'success');
+        // Connecting links stats; it is NOT a Codex sign-in. Say so, put them
+        // on the sign-in tab, and carry the email over so the next step is one
+        // password away.
+        switchTab('signin');                       // clears any old message
+        const siEmail = document.getElementById('si-email');
+        if (siEmail && !siEmail.value.trim()) siEmail.value = email;
+        showMsg('✓ Mythic Spellbook connected. That links your game stats — it does not sign you in. '
+              + 'Now enter your Codex password above and press Enter the Codex.', 'success');
+        const siPass = document.getElementById('si-password');
+        if (siPass) siPass.focus();
       } catch (e) { showMsg((e && e.message) || 'Could not connect.', 'error'); }
       finally { setBusy('mg-btn', false); }
     }
@@ -375,8 +406,54 @@
 
     function setBusy(id, busy) {
       const btn = document.getElementById(id);
+      if (!btn) return;
+      // Remember each button's OWN label the first time it is used. This was a
+      // two-way guess that relabelled anything other than Sign In to "Create
+      // Account" — so connecting a game account renamed the Connect button to
+      // "Create Account", and players clicked it believing it signed them in.
+      if (!btn.dataset.label) btn.dataset.label = btn.textContent.trim();
       btn.disabled = busy;
-      btn.textContent = busy ? 'Please wait…' : (id === 'si-btn' ? 'Enter the Codex' : 'Create Account');
+      btn.textContent = busy ? 'Please wait…' : btn.dataset.label;
+    }
+
+    function showReset() {
+      ['panel-signin', 'panel-signup', 'mg-form'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.style.display = 'none';
+      });
+      const panel = document.getElementById('panel-reset');
+      if (panel) panel.style.display = '';
+      showMsg('Choose a new password for your Codex account.', 'success');
+      const f = document.getElementById('rp-password'); if (f) f.focus();
+    }
+    if (IS_RECOVERY) showReset();
+    supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') showReset();
+    });
+
+    async function forgotPassword() {
+      const email = document.getElementById('si-email').value.trim();
+      if (!email) return showMsg('Type your email in the box above first, then press Forgot your password.', 'error');
+      setBusy('si-btn', true); clearMsg();
+      try {
+        await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/login.html' });
+        // Same wording whether or not the account exists — otherwise this page
+        // becomes a way to test which emails are registered.
+        showMsg('If an account exists for ' + email + ', a reset link is on its way. Check your spam folder too.', 'success');
+      } catch (e) {
+        showMsg((e && e.message) || 'Could not send the reset email.', 'error');
+      } finally { setBusy('si-btn', false); }
+    }
+
+    async function setNewPassword() {
+      const a = document.getElementById('rp-password').value;
+      const b = document.getElementById('rp-confirm').value;
+      if (a.length < 6) return showMsg('Password must be at least 6 characters.', 'error');
+      if (a !== b) return showMsg('Those two passwords do not match.', 'error');
+      setBusy('rp-btn', true); clearMsg();
+      const { error } = await supabaseClient.auth.updateUser({ password: a });
+      setBusy('rp-btn', false);
+      if (error) return showMsg(error.message, 'error');
+      window.location.href = '/Mythic%20Spellbook%20Studio.html';
     }
 
     async function signIn() {
