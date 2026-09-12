@@ -479,12 +479,13 @@ const BugsPage = () => {
                         background: r.internal ? 'rgba(196,90,47,.04)' : 'transparent',
                         borderRadius: r.internal ? 4 : 0, paddingLeft: r.internal ? 8 : 0, paddingRight: r.internal ? 8 : 0}}>
                         <div className="avatar" style={{flex:'none',width:28,height:28,fontSize:12,
-                          background:'linear-gradient(135deg,#5a4a2a,#2a1f0a)'}}>{r.who[0]}</div>
+                          background:'linear-gradient(135deg,#5a4a2a,#2a1f0a)'}}>{(r.who || r.by || '?')[0]}</div>
                         <div style={{flex:1}}>
                           <div style={{fontFamily:'var(--display)',fontSize:11,color:'var(--gold-bright)',letterSpacing:'.06em'}}>
-                            {r.who}
+                            {r.who || r.by || 'Reporter'}
                             {r.internal && <span style={{color:'var(--ember)',marginLeft:6,fontSize:9}}>· INTERNAL</span>}
-                            <span style={{color:'var(--ink-faint)',fontSize:9,marginLeft:8,fontFamily:'var(--mono)'}}>{rtBug(r.when)}</span>
+                            {r.reporter && <span style={{color:'var(--tide)',marginLeft:6,fontSize:9}}>· REPORTER</span>}
+                            <span style={{color:'var(--ink-faint)',fontSize:9,marginLeft:8,fontFamily:'var(--mono)'}}>{rtBug(r.when || r.at)}</span>
                           </div>
                           <div style={{fontFamily:'var(--serif)',fontSize:13,color:'var(--ink)',marginTop:2,lineHeight:1.5}}>{r.text}</div>
                         </div>

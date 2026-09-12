@@ -58,15 +58,18 @@ begin
                             'reopenCount', coalesce((r.data->>'reopenCount')::int, 0) + 1);
   end if;
 
-  -- an optional word from the reporter, shown in the same thread as staff replies
+  -- An optional word from the reporter, in the SAME shape the bug tracker
+  -- renders: { who, when, text, internal }. It takes who[0] for the avatar
+  -- initial, so writing 'by'/'at' here (the feature requests shape) left who
+  -- undefined and crashed the whole page on render. Do not "tidy" these keys.
   if p_note is not null and length(btrim(p_note)) > 0 then
     new_data := jsonb_set(new_data, '{responses}',
       coalesce(new_data->'responses', '[]'::jsonb) || jsonb_build_array(jsonb_build_object(
-        'id',    'rsp-' || substr(md5(random()::text || clock_timestamp()::text), 1, 10),
-        'by',    coalesce(nullif(btrim(r.data->>'reporter'), ''), 'Reporter'),
-        'text',  btrim(p_note),
-        'at',    now_ms,
-        'staff', false
+        'who',      coalesce(nullif(btrim(r.data->>'reporter'), ''), 'Reporter'),
+        'when',     now_ms,
+        'text',     btrim(p_note),
+        'internal', false,
+        'reporter', true
       )), true);
   end if;
 
