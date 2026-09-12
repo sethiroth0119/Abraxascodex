@@ -49,7 +49,7 @@ const BugsPage = () => {
   // Reports are per-row in public.bug_reports so a member can file one without
   // needing write access to the whole shared collection. Falls back to the old
   // collection only if the new store is unavailable.
-  const [bugs, setBugs, bugStatus] = window.useBugReports
+  const [bugs, setBugs, bugStatus, reloadBugs] = window.useBugReports
     ? window.useBugReports()
     : (window.useEntities ? [...window.useEntities('bugs'), { loading:false, error:null, saving:false }]
                           : [...React.useState(window.BUGS), { loading:false, error:null, saving:false }]);
@@ -66,6 +66,28 @@ const BugsPage = () => {
   // Files are uploaded as they are picked and carried on the draft until submit.
   const [draftAtts, setDraftAtts] = React.useState([]);
   const [response, setResponse] = React.useState('');
+  // Reporter verification of a fix
+  const [verifyNote, setVerifyNote] = React.useState('');
+  const [verifyBusy, setVerifyBusy] = React.useState(false);
+  const [verifyErr, setVerifyErr]   = React.useState('');
+
+  // Goes through a database function, not a normal update: members are not
+  // allowed to write bug_reports, and that stays true — the function checks the
+  // caller is the reporter and can only move a report from fixed back to open.
+  const verifyFix = async (id, fixed) => {
+    if (!window.supabaseClient) { setVerifyErr('Not connected — sign in and try again.'); return; }
+    setVerifyBusy(true); setVerifyErr('');
+    try {
+      const { error } = await window.supabaseClient.rpc('bug_report_verify', {
+        p_id: id, p_fixed: fixed, p_note: verifyNote.trim() || null,
+      });
+      if (error) throw error;
+      setVerifyNote('');
+      if (reloadBugs) await reloadBugs();
+    } catch (e) {
+      setVerifyErr((e && e.message) || String(e));
+    } finally { setVerifyBusy(false); }
+  };
   const settings = (window.SETTINGS||{});
   const me = settings.designerName || 'Team';
 
@@ -315,6 +337,35 @@ const BugsPage = () => {
                   <button className="btn" onClick={()=>setOpenId(null)}>✕</button>
                 </div>
                 <div className="panel-body">
+                  {/* Only the person who filed it, and only while it says fixed. */}
+                  {open.status === 'fixed' && window.CURRENT_USER && open._createdBy === window.CURRENT_USER.id && (
+                    <div className="bug-verify">
+                      <div className="bug-verify-q">Is this fixed for you?</div>
+                      <div className="bug-verify-sub">
+                        The team marked this fixed. Tell us whether it really is — if it isn’t,
+                        it goes straight back to Open.
+                      </div>
+                      <textarea className="field-area" value={verifyNote} placeholder="Optional: what is still happening?"
+                        onChange={e=>setVerifyNote(e.target.value)} style={{minHeight:56,margin:'8px 0'}}/>
+                      {verifyErr && <div className="bug-save-error" style={{marginBottom:8}}>{verifyErr}</div>}
+                      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                        <button className="btn btn-primary" disabled={verifyBusy}
+                          onClick={()=>verifyFix(open.id, true)}>
+                          {verifyBusy ? 'Sending…' : '✓ Yes, it’s fixed'}</button>
+                        <button className="btn" disabled={verifyBusy}
+                          onClick={()=>verifyFix(open.id, false)}>✕ No, still happening</button>
+                      </div>
+                    </div>
+                  )}
+                  {open.reporterVerified === true && (
+                    <div className="bug-verify-ok">✓ The reporter confirmed this fix.</div>
+                  )}
+                  {open.status !== 'fixed' && open.reopenCount > 0 && (
+                    <div className="bug-verify-reopened">
+                      ↺ Reopened by the reporter — the fix didn’t hold
+                      {open.reopenCount > 1 ? ' (' + open.reopenCount + ' times)' : ''}.
+                    </div>
+                  )}
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:14}}>
                     <div className="field" style={{margin:0}}>
                       <label className="field-label">Status</label>

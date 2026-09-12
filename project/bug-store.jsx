@@ -138,6 +138,8 @@
       window.dispatchEvent(new CustomEvent('studio:data-change', { detail: { key: 'bugs' } }));
     }, [items, load]);
 
-    return [items, commit, status];
+    // reload is exposed so a page can refresh after a server-side change it did
+    // not make through commit() — e.g. the reporter-verification RPC.
+    return [items, commit, status, load];
   };
 })();
