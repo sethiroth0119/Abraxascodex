@@ -22,13 +22,25 @@ const SCOPE_LABELS = {
 };
 
 const ThreadsPage = () => {
-  const [threads, setThreads] = window.useEntities ? window.useEntities('threads') : React.useState(window.THREADS);
+  // Per-row storage (public.threads + public.thread_posts). It used to be a
+  // studio_collections key, which only staff may write — so a member's reply
+  // saved to their own browser and was overwritten on the next load. See
+  // thread-store.jsx.
+  const [threads, setThreads, thStatus] = window.useThreads
+    ? window.useThreads()
+    : (window.useEntities ? [...window.useEntities('threads'), null] : [...React.useState(window.THREADS), null]);
   const [openId, setOpenId] = React.useState(null);
   const [filter, setFilter] = React.useState('all');
   const [q, setQ] = React.useState('');
   const [draft, setDraft] = React.useState('');
   const settings = (window.SETTINGS||{});
-  const me = settings.designerName || 'You';
+  // Members join threads but do not curate them: no starting, renaming,
+  // resolving or deleting. The RLS on public.threads agrees, so a stray
+  // control here would only produce an error rather than a change.
+  const canCurate = !window.IS_VIEWER;
+  // Sign a comment with the reader's own name — designerName is the studio's
+  // and is shared, so every member would post as the lead designer.
+  const me = window.myDisplayName ? window.myDisplayName() : (settings.designerName || 'You');
 
   const open = threads.find(t => t.id === openId);
 
@@ -46,12 +58,16 @@ const ThreadsPage = () => {
   const post = (id, text, who=me) => {
     if(!text.trim()) return;
     const t = threads.find(x=>x.id===id);
-    update(id, { posts: [...t.posts, { id:'p'+Date.now(), who, when: Date.now(), text }] });
+    if(!t) return;
+    // Random suffix, not Date.now() alone: two comments posted inside the same
+    // millisecond would collide on the primary key now that a comment is a row.
+    const pid = window.makeId ? window.makeId('p') : 'p-'+Math.random().toString(36).slice(2,8)+Date.now().toString(36);
+    update(id, { posts: [...(t.posts||[]), { id:pid, who, when: Date.now(), text:text.trim() }] });
   };
 
   const filtered = threads.filter(t =>
     (filter==='all' || (filter==='open'?t.status==='open':filter==='resolved'?t.status==='resolved':t.scope===filter))
-    && (!q || t.title.toLowerCase().includes(q.toLowerCase()) || (t.posts||[]).some(p=>p.text.toLowerCase().includes(q.toLowerCase())))
+    && (!q || t.title.toLowerCase().includes(q.toLowerCase()) || (t.posts||[]).some(p=>(p.text||'').toLowerCase().includes(q.toLowerCase())))
   );
 
   // ---- Athena helper for a thread ----
@@ -61,7 +77,7 @@ const ThreadsPage = () => {
     update(id, { posts: [...t.posts, { id:'pwait'+Date.now(), who:'Athena', when:Date.now(), text:'(thinking…)' }] });
     try {
       const sys = `You are Athena, a creative AI helping a game studio. Read the discussion below. Give a concise, useful perspective. 3-5 sentences. Reference specifics from the thread. Don't be sycophantic.`;
-      const dialogue = t.posts.map(p => `${p.who}: ${p.text}`).join('\n');
+      const dialogue = (t.posts||[]).map(p => `${p.who}: ${p.text}`).join('\n');
       const reply = await window.claude.complete({
         messages: [
           { role:'user', content: `${sys}\n\nTHREAD TITLE: ${t.title}\n\n${dialogue}\n\nYour turn:` },
@@ -91,9 +107,21 @@ const ThreadsPage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Search threads..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New Thread</button>}
+          {canCurate && <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New Thread</button>}
         </div>
       </div>
+
+      {/* Never fail quietly: a reply that did not save has to say so. */}
+      {thStatus && thStatus.error && (
+        <div className="bug-save-error" style={{marginBottom:14}}>
+          <strong>Not saved.</strong> {thStatus.error}
+        </div>
+      )}
+      {thStatus && thStatus.fallback && !thStatus.error && (
+        <div className="bug-save-error" style={{marginBottom:14}}>
+          Working from this browser only — comments will not reach the team until the connection is back.
+        </div>
+      )}
 
       <div className="chip-row" style={{marginBottom:16}}>
         <div className={`chip ${filter==='all'?'active':''}`} onClick={()=>setFilter('all')}>All ({threads.length})</div>
@@ -124,8 +152,8 @@ const ThreadsPage = () => {
                   <span>·</span>
                   <span>{t.author}</span>
                   <span>·</span>
-                  <span>{relativeTimeT(t.posts[t.posts.length-1]?.when || t.created)}</span>
-                  <span style={{marginLeft:'auto',color:'var(--gold-bright)'}}>{t.posts.length} 💬</span>
+                  <span>{relativeTimeT((t.posts||[])[(t.posts||[]).length-1]?.when || t.created)}</span>
+                  <span style={{marginLeft:'auto',color:'var(--gold-bright)'}}>{(t.posts||[]).length} 💬</span>
                 </div>
               </div>
             ))}
@@ -138,28 +166,34 @@ const ThreadsPage = () => {
           <div className="panel">
             <div className="panel-head">
               <div style={{flex:1,minWidth:0}}>
-                <input value={open.title} onChange={e=>update(open.id,{title:e.target.value})}
-                  style={{width:'100%',background:'transparent',border:'none',outline:'none',
-                    fontFamily:'var(--display)',fontSize:18,letterSpacing:'.06em',color:'var(--gold-bright)',padding:0}}/>
+                {canCurate ? (
+                  <input value={open.title} onChange={e=>update(open.id,{title:e.target.value})}
+                    style={{width:'100%',background:'transparent',border:'none',outline:'none',
+                      fontFamily:'var(--display)',fontSize:18,letterSpacing:'.06em',color:'var(--gold-bright)',padding:0}}/>
+                ) : (
+                  <div style={{fontFamily:'var(--display)',fontSize:18,letterSpacing:'.06em',color:'var(--gold-bright)'}}>{open.title}</div>
+                )}
                 <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)',marginTop:2}}>
                   {SCOPE_LABELS[open.scope]} · started by {open.author} {relativeTimeT(open.created)}
                 </div>
               </div>
-              <div style={{display:'flex',gap:6}}>
-                <select className="field-select" value={open.scope} onChange={e=>update(open.id,{scope:e.target.value})} style={{width:130,fontSize:11,padding:'4px 8px'}}>
-                  {Object.entries(SCOPE_LABELS).map(([k,l])=><option key={k} value={k}>{l}</option>)}
-                </select>
-                <button className="btn" onClick={()=>update(open.id,{status: open.status==='open'?'resolved':'open'})}>
-                  {open.status==='open' ? <><Icon name="check" size={12}/> Resolve</> : <>↺ Reopen</>}
-                </button>
-                <button className="btn" onClick={()=>remove(open.id)} style={{color:'var(--ember)'}}>✕</button>
-              </div>
+              {canCurate && (
+                <div style={{display:'flex',gap:6}}>
+                  <select className="field-select" value={open.scope} onChange={e=>update(open.id,{scope:e.target.value})} style={{width:130,fontSize:11,padding:'4px 8px'}}>
+                    {Object.entries(SCOPE_LABELS).map(([k,l])=><option key={k} value={k}>{l}</option>)}
+                  </select>
+                  <button className="btn" onClick={()=>update(open.id,{status: open.status==='open'?'resolved':'open'})}>
+                    {open.status==='open' ? <><Icon name="check" size={12}/> Resolve</> : <>↺ Reopen</>}
+                  </button>
+                  <button className="btn" onClick={()=>remove(open.id)} style={{color:'var(--ember)'}}>✕</button>
+                </div>
+              )}
             </div>
             <div className="panel-body">
-              {open.posts.map(p => (
+              {(open.posts||[]).map(p => (
                 <div key={p.id} style={{display:'flex',gap:12,padding:'10px 0',borderBottom:'1px dashed var(--rule)'}}>
                   <div className="avatar" style={{background: p.who==='Athena'?'linear-gradient(135deg,#5a4a7a,#1a142a)':'linear-gradient(135deg,#5a4a2a,#2a1f0a)',flex:'none'}}>
-                    {p.who==='Athena' ? '🦉' : p.who[0]}
+                    {p.who==='Athena' ? '🦉' : (p.who || '?')[0]}
                   </div>
                   <div style={{flex:1}}>
                     <div style={{fontFamily:'var(--display)',color: p.who==='Athena'?'#d2b8ff':'var(--gold-bright)',letterSpacing:'.06em',fontSize:13}}>
@@ -174,12 +208,17 @@ const ThreadsPage = () => {
                 <textarea className="field-area" rows="3" value={draft} onChange={e=>setDraft(e.target.value)}
                           placeholder={`Add a comment as ${me}…`}/>
                 <div style={{display:'flex',gap:8,marginTop:8}}>
-                  <button className="btn btn-primary" onClick={()=>{post(open.id, draft); setDraft('');}}>
+                  {/* Posting is open to everyone signed in — joining the
+                      discussion is the one thing a member may do here. */}
+                  <button className="btn btn-primary" disabled={!draft.trim()}
+                          onClick={()=>{post(open.id, draft); setDraft('');}}>
                     <Icon name="check" size={12}/> Post
                   </button>
-                  <button className="btn" onClick={()=>askAthena(open.id)} title="Have Athena weigh in">
-                    🦉 Ask Athena
-                  </button>
+                  {canCurate && (
+                    <button className="btn" onClick={()=>askAthena(open.id)} title="Have Athena weigh in">
+                      🦉 Ask Athena
+                    </button>
+                  )}
                   <div style={{marginLeft:'auto',fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-faint)'}}>posting as {me}</div>
                 </div>
               </div>

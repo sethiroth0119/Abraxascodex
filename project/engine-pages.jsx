@@ -44,7 +44,7 @@ const MovesPage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Search moves..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" onClick={createMove}><Icon name="add" size={14}/> New move</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={createMove}><Icon name="add" size={14}/> New move</button>}
         </div>
       </div>
 
@@ -204,7 +204,7 @@ const StatusesPage = () => {
           <h1 className="page-title"><span className="ornament">☠</span>Status Effects</h1>
           <div className="page-sub">{statuses.length} statuses · the lexicon of how units suffer and shine</div>
         </div>
-        <div className="page-actions"><button className="btn btn-primary" onClick={createStatus}><Icon name="add" size={14}/> New status</button></div>
+        <div className="page-actions">{!window.IS_VIEWER && <button className="btn btn-primary" onClick={createStatus}><Icon name="add" size={14}/> New status</button>}</div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:12}}>
         {statuses.map(s => (
@@ -276,7 +276,7 @@ const PassivesPage = () => {
           <h1 className="page-title"><span className="ornament">✦</span>Passives</h1>
           <div className="page-sub">{passives.length} passives in the catalog</div>
         </div>
-        <div className="page-actions"><button className="btn btn-primary" onClick={createPassive}><Icon name="add" size={14}/> New passive</button></div>
+        <div className="page-actions">{!window.IS_VIEWER && <button className="btn btn-primary" onClick={createPassive}><Icon name="add" size={14}/> New passive</button>}</div>
       </div>
 
       <div className="chip-row" style={{marginBottom:18}}>

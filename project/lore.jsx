@@ -95,7 +95,7 @@ const LorePage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Search codex..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" onClick={createEntry}><Icon name="add" size={14}/> New Entry</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={createEntry}><Icon name="add" size={14}/> New Entry</button>}
         </div>
       </div>
 

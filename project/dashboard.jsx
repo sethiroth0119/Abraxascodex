@@ -70,6 +70,18 @@ const Dashboard = ({ setRoute }) => {
   const cards = cloud ? (Array.isArray(cloud[0]) ? cloud[0] : [])
                       : (Array.isArray(window.CARDS) ? window.CARDS : []);
   const canWrite = cloud ? cloud[1].canWrite : true;
+
+  // Subscribe to the collections the tiles count, rather than reading
+  // window.HEROES and friends straight. Those globals are filled in by an
+  // async cloud load, and a plain read renders once — before the load lands —
+  // and never re-renders, so Forge Hall showed 0 heroes and 0 lore entries to
+  // anyone whose browser had no local copy, which is every member. Reading
+  // through the hook both triggers the fetch and re-renders when it arrives.
+  const [heroes]    = window.useEntities ? window.useEntities('heroes')    : [window.HEROES || []];
+  const [loreItems] = window.useEntities ? window.useEntities('lore')      : [window.LORE_ENTRIES || []];
+  const [campaigns] = window.useEntities ? window.useEntities('campaigns') : [window.CAMPAIGNS || []];
+  const n = (v) => (Array.isArray(v) ? v.length : 0);
+
   return (
     <div className="page">
       <div className="page-head">
@@ -81,10 +93,12 @@ const Dashboard = ({ setRoute }) => {
           <button className="btn" onClick={() => setRoute('cards')}>
             <Icon name="search" size={14} /> Open Codex
           </button>
-          <button className="btn btn-primary"
-                  onClick={() => { window.__pendingNewCard = true; setRoute('cards'); }}>
-            <Icon name="add" size={14} /> New Card
-          </button>
+          {canWrite && !window.IS_VIEWER && (
+            <button className="btn btn-primary"
+                    onClick={() => { window.__pendingNewCard = true; setRoute('cards'); }}>
+              <Icon name="add" size={14} /> New Card
+            </button>
+          )}
         </div>
       </div>
 
@@ -97,13 +111,13 @@ const Dashboard = ({ setRoute }) => {
         </div>
         <div className="tile">
           <div className="tile-label">Heroes & NPCs</div>
-          <div className="tile-num">{window.HEROES.length}</div>
+          <div className="tile-num">{n(heroes)}</div>
           <div className="tile-delta" style={{color:"var(--ink-faint)"}}>named souls</div>
           <div className="glyph">☥</div>
         </div>
         <div className="tile">
           <div className="tile-label">Lore entries</div>
-          <div className="tile-num">{(window.LORE_ENTRIES||[]).length}</div>
+          <div className="tile-num">{n(loreItems)}</div>
           <div className="tile-delta" style={{color:"var(--ink-faint)"}}>entries</div>
           <div className="glyph">✦</div>
         </div>
@@ -121,7 +135,7 @@ const Dashboard = ({ setRoute }) => {
         </div>
         <div className="tile">
           <div className="tile-label">Active campaigns</div>
-          <div className="tile-num">{(window.CAMPAIGNS||[]).length}</div>
+          <div className="tile-num">{n(campaigns)}</div>
           <div className="tile-delta" style={{color:"var(--ink-faint)"}}>active arcs</div>
           <div className="glyph">❦</div>
         </div>

@@ -52,7 +52,7 @@
         // no backend at all — fall back to whatever the old collection left in
         // localStorage so the page still shows something
         const local = (() => {
-          try { return JSON.parse(localStorage.getItem('mss_bugs') || '[]'); } catch (e) { return []; }
+          try { return JSON.parse(localStorage.getItem('mss:bugs') || '[]'); } catch (e) { return []; }
         })();
         setItems(local); remember(local);
         setStatus(s => ({ loading: false, saving: false, fallback: true,
@@ -88,7 +88,7 @@
       setItems(list);                                    // optimistic
 
       if (!sb()) {
-        try { localStorage.setItem('mss_bugs', JSON.stringify(list)); } catch (e) {}
+        try { localStorage.setItem('mss:bugs', JSON.stringify(list)); } catch (e) {}
         return;
       }
 

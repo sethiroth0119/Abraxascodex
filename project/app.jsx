@@ -234,7 +234,7 @@ const App = () => {
             ))}
         </div>
         <div className="viewer-banner">
-          👁 You are in <strong style={{marginLeft:4,marginRight:4}}>read-only</strong> mode — browse the world, report bugs, and join threads.
+          👁 You are in <strong style={{marginLeft:4,marginRight:4}}>read-only</strong> mode — browse the whole codex. Building it is staff work; you can report bugs, join threads and request features.
         </div>
         <div className="content grain">
           {/* key={route} remounts the boundary per page so navigating away from

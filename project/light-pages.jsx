@@ -39,7 +39,7 @@ const TimelinePage = () => {
           <div className="page-sub">Three eras · {timeline.length} pinned moments · click any event to edit</div>
         </div>
         <div className="page-actions">
-          <button className="btn btn-primary" onClick={addEvent}><Icon name="add" size={14}/> Pin event</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={addEvent}><Icon name="add" size={14}/> Pin event</button>}
         </div>
       </div>
 
@@ -240,7 +240,7 @@ const RelicsPage = () => {
             <Icon name="search" size={14}/>
             <input placeholder="Filter..." value={q} onChange={e=>setQ(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New item</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={create}><Icon name="add" size={14}/> New item</button>}
         </div>
       </div>
 

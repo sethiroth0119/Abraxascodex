@@ -239,12 +239,14 @@ const CardForge = () => {
           <div className="page-sub">{filtered.length} of {cards.length} cards · Engine v0.41 · 7 card types · 21 elements · 40 factions</div>
         </div>
         <div className="page-actions" style={{flexWrap:'wrap',justifyContent:'flex-end',rowGap:6}}>
-          <button className="btn" onClick={() => showToast('Exported to card_catalog')}><Icon name="upload" size={14}/> Publish</button>
+          {!window.IS_VIEWER && <button className="btn" onClick={() => showToast('Exported to card_catalog')}><Icon name="upload" size={14}/> Publish</button>}
           <button className="btn"><Icon name="eye" size={14}/> Playtest</button>
-          <button className="btn btn-primary" onClick={createCard}>
-            <Icon name="add" size={14}/> New Card
-          </button>
-          {selected && (
+          {!window.IS_VIEWER && (
+            <button className="btn btn-primary" onClick={createCard}>
+              <Icon name="add" size={14}/> New Card
+            </button>
+          )}
+          {selected && !window.IS_VIEWER && (
             <button className="btn" onClick={() => deleteCard(selected.id, selected.name)} title="Delete the selected card"
                     style={{color:'var(--ember)',borderColor:'var(--ember)'}}>
               <Icon name="trash" size={14}/> Delete
@@ -288,7 +290,7 @@ const CardForge = () => {
           <div style={{fontFamily:'var(--serif)',fontStyle:'italic',color:'var(--ink-dim)',fontSize:14,marginBottom:24,maxWidth:480,marginLeft:'auto',marginRight:'auto',lineHeight:1.5}}>
             Forge your first card to begin the Mythic Spellbook catalog. You can edit every stat, passive, learnset move, and piece of art on the next screen.
           </div>
-          <button className="btn btn-primary" onClick={createCard}><Icon name="add" size={14}/> Forge first card</button>
+          {!window.IS_VIEWER && <button className="btn btn-primary" onClick={createCard}><Icon name="add" size={14}/> Forge first card</button>}
         </div>
       )}
 
@@ -297,11 +299,13 @@ const CardForge = () => {
         <div className="panel builder-list">
           <div className="panel-head">
             <div className="panel-title">Codex · {filtered.length}</div>
-            <button className="btn btn-primary" onClick={createCard}
-                    style={{marginLeft:'auto',padding:'4px 10px',fontSize:12}}
-                    title="Forge a new card">
-              <Icon name="add" size={12}/> New
-            </button>
+            {!window.IS_VIEWER && (
+              <button className="btn btn-primary" onClick={createCard}
+                      style={{marginLeft:'auto',padding:'4px 10px',fontSize:12}}
+                      title="Forge a new card">
+                <Icon name="add" size={12}/> New
+              </button>
+            )}
           </div>
           <div>
             {filtered.map(c => {

@@ -1129,3 +1129,13 @@ body[data-viewer="true"] .viewer-banner { display:flex!important; }
   border-radius:var(--r-md);padding:8px 12px;margin-bottom:14px;font-size:13px}
 .bug-verify-reopened{border:1px solid var(--ember);background:rgba(171,118,62,.12);color:var(--ink);
   border-radius:var(--r-md);padding:8px 12px;margin-bottom:14px;font-size:13px}
+
+/* Read-only notice — a member's edit to canon is refused at the store setter
+   (see store.jsx). Silence is what made the lost bug reports and thread
+   replies invisible, so the refusal has to be visible. */
+.ro-notice{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);z-index:9000;
+  max-width:min(560px,calc(100vw - 40px));padding:12px 18px;border-radius:var(--r-md);
+  border:1px solid var(--gold-deep);background:rgba(25,26,29,.97);color:var(--ink);
+  box-shadow:0 10px 34px rgba(0,0,0,.55);font-size:13px;line-height:1.55;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.ro-notice.show{opacity:1;transform:translate(-50%,0)}

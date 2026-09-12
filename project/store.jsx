@@ -106,6 +106,45 @@ const _COLL_EDIT_WINDOW = 4000;
 
 const _isCloudKey = (key) => key !== 'cards' && !!window.supabaseClient;
 const _canWriteCloud = () => COLL_WRITE_ROLES.includes(window.CURRENT_ROLE);
+
+/* ── Read-only backstop for members ───────────────────────────────────────────
+   Canon is staff's to build. The RLS on studio_collections already refuses a
+   member's write, but refusing at the database was not enough on its own: the
+   edit still landed in window.* and localStorage, so the page showed the change
+   as though it had been saved, and it disappeared on the next load. That is how
+   bug reports and thread replies were lost — the member was told nothing.
+
+   So a member's write to a canon collection is stopped here, at the setter,
+   with a visible notice. This is exhaustive by construction: it holds for every
+   page, including any create button we failed to hide. Hiding the buttons is
+   the courtesy; this is the guarantee.
+
+   'settings' is the exception — it carries personal display preferences
+   (density, theme, the name on your own comments), so it may persist in this
+   browser. It still never reaches the cloud for a member, because _collSave is
+   gated on _canWriteCloud independently. */
+const VIEWER_LOCAL_ONLY = ['settings'];
+const _isViewer = () => window.IS_VIEWER === true;
+
+let _roNoticeAt = 0;
+function _readOnlyNotice() {
+  // One notice at a time: a slider dragged by a member fires a setter per pixel.
+  if (Date.now() - _roNoticeAt < 2500) return;
+  _roNoticeAt = Date.now();
+  try {
+    let el = document.getElementById('ro-notice');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'ro-notice';
+      el.className = 'ro-notice';
+      document.body.appendChild(el);
+    }
+    el.textContent = 'Read-only — the studio canon is edited by staff. You can report bugs, join threads and request features.';
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 4200);
+  } catch (e) { /* no DOM yet — the write is blocked either way */ }
+}
 const _isEmptyVal = (v) => v == null
   || (Array.isArray(v) ? v.length === 0
       : (typeof v === 'object' ? Object.keys(v).length === 0 : false));
@@ -220,7 +259,15 @@ function useEntities(key) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  return [items, setItems];
+  // The setter handed to pages is guarded; the internal setItems used by the
+  // cloud load and the realtime subscription above is not, so a member still
+  // receives everything staff publish.
+  const guardedSet = React.useCallback((next) => {
+    if (_isViewer() && !VIEWER_LOCAL_ONLY.includes(key)) { _readOnlyNotice(); return; }
+    setItems(next);
+  }, [key]);
+
+  return [items, guardedSet];
 }
 
 // Convenience helpers
